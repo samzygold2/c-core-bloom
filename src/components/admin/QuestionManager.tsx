@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Upload, Search, Filter } from 'lucide-react';
+import { Plus, Trash2, Upload, Search, Filter, Edit, Save, X } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Test {
@@ -38,6 +38,11 @@ export const QuestionManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTest, setFilterTest] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editQuestionText, setEditQuestionText] = useState('');
+  const [editOptions, setEditOptions] = useState<string[]>([]);
+  const [editCorrectAnswer, setEditCorrectAnswer] = useState(0);
+  const [editDifficulty, setEditDifficulty] = useState('medium');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -111,6 +116,64 @@ export const QuestionManager = () => {
     setCorrectAnswer(0);
     setDifficulty('medium');
     setShowForm(false);
+  };
+
+  const handleEdit = (question: Question) => {
+    setEditingQuestionId(question.id);
+    setEditQuestionText(question.question_text);
+    setEditOptions([...question.options]);
+    setEditCorrectAnswer(question.correct_answer);
+    setEditDifficulty(question.difficulty);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingQuestionId || !editQuestionText.trim() || editOptions.some(o => !o.trim())) {
+      toast({
+        title: 'Error',
+        description: 'Please fill all fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('questions')
+      .update({
+        question_text: editQuestionText,
+        options: editOptions,
+        correct_answer: editCorrectAnswer,
+        difficulty: editDifficulty,
+      })
+      .eq('id', editingQuestionId);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update question',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Question updated successfully',
+      });
+      
+      await supabase.from('audit_log').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id,
+        action: `Updated question`,
+      });
+      
+      setEditingQuestionId(null);
+      fetchQuestions();
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingQuestionId(null);
+    setEditQuestionText('');
+    setEditOptions([]);
+    setEditCorrectAnswer(0);
+    setEditDifficulty('medium');
   };
 
   const handleDelete = async (questionId: string) => {
@@ -475,35 +538,110 @@ export const QuestionManager = () => {
         {filteredQuestions.map((question) => (
           <Card key={question.id}>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="text-sm text-muted-foreground mb-1">
-                    {question.tests.title}
+              {editingQuestionId === question.id ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Editing Question</CardTitle>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={handleUpdate}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={cancelEdit}>
+                        <X className="mr-2 h-4 w-4" />
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <CardTitle className="text-lg">{question.question_text}</CardTitle>
-                  <div className="mt-2 space-y-1">
-                    {question.options.map((option, index) => (
-                      <div
-                        key={index}
-                        className={`text-sm p-2 rounded ${
-                          index === question.correct_answer
-                            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        {index + 1}. {option}
+
+                  <div>
+                    <Label>Question Text</Label>
+                    <Textarea
+                      value={editQuestionText}
+                      onChange={(e) => setEditQuestionText(e.target.value)}
+                      placeholder="Enter your question"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Options</Label>
+                    {editOptions.map((option, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <Input
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...editOptions];
+                            newOptions[index] = e.target.value;
+                            setEditOptions(newOptions);
+                          }}
+                          placeholder={`Option ${index + 1}`}
+                        />
+                        <Button
+                          type="button"
+                          variant={editCorrectAnswer === index ? 'default' : 'outline'}
+                          onClick={() => setEditCorrectAnswer(index)}
+                        >
+                          {editCorrectAnswer === index ? '✓ Correct' : 'Set Correct'}
+                        </Button>
                       </div>
                     ))}
                   </div>
+
+                  <div>
+                    <Label>Difficulty</Label>
+                    <Select value={editDifficulty} onValueChange={setEditDifficulty}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDelete(question.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              ) : (
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      {question.tests.title}
+                    </div>
+                    <CardTitle className="text-lg">{question.question_text}</CardTitle>
+                    <div className="mt-2 space-y-1">
+                      {question.options.map((option, index) => (
+                        <div
+                          key={index}
+                          className={`text-sm p-2 rounded ${
+                            index === question.correct_answer
+                              ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          {index + 1}. {option}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEdit(question)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDelete(question.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardHeader>
           </Card>
         ))}
