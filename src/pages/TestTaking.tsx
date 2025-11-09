@@ -15,7 +15,6 @@ interface Question {
   id: string;
   question_text: string;
   options: string[];
-  correct_answer: number;
 }
 
 interface Test {
@@ -66,7 +65,7 @@ const TestTaking = () => {
 
     const { data: questionsData, error: questionsError } = await supabase
       .from('questions')
-      .select('*')
+      .select('id, test_id, question_text, options, difficulty, created_at')
       .eq('test_id', testId);
 
     if (questionsError || !questionsData) {
@@ -123,8 +122,14 @@ const TestTaking = () => {
   const handleSubmit = async () => {
     if (!userTestId) return;
 
+    // Fetch correct answers from server (admin-only access)
+    const { data: questionsWithAnswers } = await supabase
+      .from('questions')
+      .select('id, correct_answer')
+      .eq('test_id', testId);
+
     let score = 0;
-    questions.forEach((q) => {
+    questionsWithAnswers?.forEach((q) => {
       if (answers[q.id] === q.correct_answer) {
         score++;
       }
