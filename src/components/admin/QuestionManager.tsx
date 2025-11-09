@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Upload } from 'lucide-react';
+import { Plus, Trash2, Upload, Search, Filter } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Test {
@@ -35,6 +35,9 @@ export const QuestionManager = () => {
   const [difficulty, setDifficulty] = useState('medium');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterTest, setFilterTest] = useState('all');
+  const [filterDifficulty, setFilterDifficulty] = useState('all');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -288,6 +291,22 @@ export const QuestionManager = () => {
     URL.revokeObjectURL(url);
   };
 
+  
+  const filteredQuestions = questions.filter(question => {
+    const matchesSearch = question.question_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          question.options.some(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesTest = filterTest === 'all' || question.tests.title === filterTest;
+    const matchesDifficulty = filterDifficulty === 'all' || question.difficulty === filterDifficulty;
+    
+    return matchesSearch && matchesTest && matchesDifficulty;
+  });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterTest('all');
+    setFilterDifficulty('all');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -384,8 +403,76 @@ export const QuestionManager = () => {
         </Card>
       )}
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Search & Filter Questions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search questions or options..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <Label>Filter by Test</Label>
+              <Select value={filterTest} onValueChange={setFilterTest}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tests</SelectItem>
+                  {tests.map((test) => (
+                    <SelectItem key={test.id} value={test.title}>
+                      {test.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Filter by Difficulty</Label>
+              <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Difficulties</SelectItem>
+                  <SelectItem value="easy">Easy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-end">
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                className="w-full"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredQuestions.length} of {questions.length} questions
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4">
-        {questions.map((question) => (
+        {filteredQuestions.map((question) => (
           <Card key={question.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
