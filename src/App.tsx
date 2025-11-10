@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
 import TestTaking from "./pages/TestTaking";
 import Results from "./pages/Results";
@@ -25,6 +26,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/test/:testId" element={<TestTaking />} />
             <Route path="/results" element={<Results />} />

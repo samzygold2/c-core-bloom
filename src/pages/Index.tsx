@@ -23,7 +23,13 @@ const Index = () => {
             <BookOpen className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold">CBT Platform</h1>
           </div>
-          <Button onClick={() => navigate('/auth')}>Get Started</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/admin-login')}>
+              <Shield className="mr-2 h-4 w-4" />
+              Admin
+            </Button>
+            <Button onClick={() => navigate('/auth')}>Get Started</Button>
+          </div>
         </div>
       </header>
 
