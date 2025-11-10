@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Upload, Search, Filter, Edit, Save, X } from 'lucide-react';
+import { Plus, Trash2, Upload, Search, Filter, Edit, Save, X, CheckSquare, Square } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Test {
@@ -43,6 +43,8 @@ export const QuestionManager = () => {
   const [editOptions, setEditOptions] = useState<string[]>([]);
   const [editCorrectAnswer, setEditCorrectAnswer] = useState(0);
   const [editDifficulty, setEditDifficulty] = useState('medium');
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -370,6 +372,94 @@ export const QuestionManager = () => {
     setFilterDifficulty('all');
   };
 
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedQuestions(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = new Set(filteredQuestions.map(q => q.id));
+      setSelectedQuestions(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  const toggleQuestionSelection = (questionId: string) => {
+    const newSelected = new Set(selectedQuestions);
+    if (newSelected.has(questionId)) {
+      newSelected.delete(questionId);
+    } else {
+      newSelected.add(questionId);
+    }
+    setSelectedQuestions(newSelected);
+    setSelectAll(newSelected.size === filteredQuestions.length);
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedQuestions.size === 0) return;
+    
+    if (!confirm(`Are you sure you want to delete ${selectedQuestions.size} question(s)?`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('questions')
+      .delete()
+      .in('id', Array.from(selectedQuestions));
+
+    if (!error) {
+      toast({
+        title: 'Success',
+        description: `Deleted ${selectedQuestions.size} questions successfully`,
+      });
+      
+      await supabase.from('audit_log').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id,
+        action: `Batch deleted ${selectedQuestions.size} questions`,
+      });
+      
+      setSelectedQuestions(new Set());
+      setSelectAll(false);
+      fetchQuestions();
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete questions',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleBatchUpdateDifficulty = async (difficulty: string) => {
+    if (selectedQuestions.size === 0) return;
+
+    const { error } = await supabase
+      .from('questions')
+      .update({ difficulty })
+      .in('id', Array.from(selectedQuestions));
+
+    if (!error) {
+      toast({
+        title: 'Success',
+        description: `Updated ${selectedQuestions.size} questions to ${difficulty}`,
+      });
+      
+      await supabase.from('audit_log').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id,
+        action: `Batch updated ${selectedQuestions.size} questions difficulty to ${difficulty}`,
+      });
+      
+      setSelectedQuestions(new Set());
+      setSelectAll(false);
+      fetchQuestions();
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to update questions',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -534,6 +624,58 @@ export const QuestionManager = () => {
         </CardContent>
       </Card>
 
+      {filteredQuestions.length > 0 && (
+        <Card className="bg-muted/50">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                >
+                  {selectAll ? (
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Square className="mr-2 h-4 w-4" />
+                  )}
+                  {selectAll ? 'Deselect All' : 'Select All'}
+                </Button>
+                {selectedQuestions.size > 0 && (
+                  <span className="text-sm text-muted-foreground">
+                    {selectedQuestions.size} selected
+                  </span>
+                )}
+              </div>
+
+              {selectedQuestions.size > 0 && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Batch Actions:</Label>
+                  <Select onValueChange={handleBatchUpdateDifficulty}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Set Difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Set to Easy</SelectItem>
+                      <SelectItem value="medium">Set to Medium</SelectItem>
+                      <SelectItem value="hard">Set to Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBatchDelete}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Selected
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4">
         {filteredQuestions.map((question) => (
           <Card key={question.id}>
@@ -603,7 +745,21 @@ export const QuestionManager = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="pt-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleQuestionSelection(question.id)}
+                      className="h-8 w-8"
+                    >
+                      {selectedQuestions.has(question.id) ? (
+                        <CheckSquare className="h-5 w-5 text-primary" />
+                      ) : (
+                        <Square className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </div>
                   <div className="flex-1">
                     <div className="text-sm text-muted-foreground mb-1">
                       {question.tests.title}
