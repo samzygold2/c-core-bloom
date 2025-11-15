@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Upload, Search, Filter, Edit, Save, X, CheckSquare, Square } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AIQuestionGenerator } from './AIQuestionGenerator';
 
 interface Test {
   id: string;
@@ -475,6 +476,8 @@ export const QuestionManager = () => {
           </Button>
         </div>
       </div>
+
+      <AIQuestionGenerator tests={tests} onQuestionsGenerated={fetchQuestions} />
 
       {showForm && (
         <Card>
