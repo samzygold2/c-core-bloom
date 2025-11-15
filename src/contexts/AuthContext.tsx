@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   signUp: (email: string, password: string, username: string) => Promise<{ error: any }>;
+  signUpAdmin: (email: string, password: string, username: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -80,6 +81,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
+  const signUpAdmin = async (email: string, password: string, username: string) => {
+    const redirectUrl = `${window.location.origin}/admin-login`;
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          username
+        }
+      }
+    });
+    
+    if (error) {
+      return { error };
+    }
+
+    // Assign admin role using edge function
+    if (data.user) {
+      try {
+        const { error: roleError } = await supabase.functions.invoke('assign-admin-role', {
+          body: { userId: data.user.id, role: 'admin' }
+        });
+        
+        if (roleError) {
+          console.error('Error assigning admin role:', roleError);
+        }
+      } catch (e) {
+        console.error('Failed to assign admin role:', e);
+      }
+    }
+    
+    return { error };
+  };
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -103,7 +140,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, loading, signUp, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, loading, signUp, signUpAdmin, signIn, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
