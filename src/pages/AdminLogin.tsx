@@ -40,7 +40,7 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const { signIn, signUp, user, isAdmin, resetPassword } = useAuth();
+  const { signIn, signUpAdmin, user, isAdmin, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,7 +98,7 @@ const AdminLogin = () => {
       return;
     }
 
-    const { error: signUpError } = await signUp(signupEmail, signupPassword, signupUsername);
+    const { error: signUpError } = await signUpAdmin(signupEmail, signupPassword, signupUsername);
 
     if (signUpError) {
       setError(signUpError.message || 'Failed to create account');
@@ -106,7 +106,7 @@ const AdminLogin = () => {
       return;
     }
 
-    setSuccessMessage('Account created successfully! An existing admin needs to assign you the admin role. You can now sign in.');
+    setSuccessMessage('Admin account created successfully! You can now sign in with admin privileges.');
     setSignupUsername('');
     setSignupEmail('');
     setSignupPassword('');
