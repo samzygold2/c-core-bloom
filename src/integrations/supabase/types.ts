@@ -182,7 +182,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_questions: {
+        Row: {
+          created_at: string | null
+          difficulty: string | null
+          id: string | null
+          options: Json | null
+          question_text: string | null
+          test_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string | null
+          options?: Json | null
+          question_text?: string | null
+          test_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string | null
+          options?: Json | null
+          question_text?: string | null
+          test_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {

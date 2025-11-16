@@ -64,7 +64,7 @@ const TestTaking = () => {
     }
 
     const { data: questionsData, error: questionsError } = await supabase
-      .from('questions')
+      .from('user_questions')
       .select('id, test_id, question_text, options, difficulty, created_at')
       .eq('test_id', testId);
 
