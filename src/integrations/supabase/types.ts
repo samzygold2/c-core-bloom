@@ -39,20 +39,23 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string
+          firstname: string
           id: string
-          username: string
+          lastname: string
         }
         Insert: {
           created_at?: string | null
           email: string
+          firstname?: string
           id: string
-          username: string
+          lastname?: string
         }
         Update: {
           created_at?: string | null
           email?: string
+          firstname?: string
           id?: string
-          username?: string
+          lastname?: string
         }
         Relationships: []
       }

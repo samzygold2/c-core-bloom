@@ -11,7 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { z } from 'zod';
 
 const signupSchema = z.object({
-  username: z.string().trim().min(3, 'Username must be at least 3 characters').max(50, 'Username must be less than 50 characters'),
+  firstname: z.string().trim().min(2, 'First name must be at least 2 characters').max(50, 'First name must be less than 50 characters'),
+  lastname: z.string().trim().min(2, 'Last name must be at least 2 characters').max(50, 'Last name must be less than 50 characters'),
   email: z.string().trim().email('Invalid email address').max(255, 'Email must be less than 255 characters'),
   password: z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password must be less than 100 characters'),
   confirmPassword: z.string()
@@ -28,7 +29,8 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   
   // Signup states
-  const [signupUsername, setSignupUsername] = useState('');
+  const [signupFirstname, setSignupFirstname] = useState('');
+  const [signupLastname, setSignupLastname] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
@@ -85,7 +87,8 @@ const AdminLogin = () => {
 
     // Validate inputs
     const validation = signupSchema.safeParse({
-      username: signupUsername,
+      firstname: signupFirstname,
+      lastname: signupLastname,
       email: signupEmail,
       password: signupPassword,
       confirmPassword: signupConfirmPassword
@@ -98,7 +101,7 @@ const AdminLogin = () => {
       return;
     }
 
-    const { error: signUpError } = await signUpAdmin(signupEmail, signupPassword, signupUsername);
+    const { error: signUpError } = await signUpAdmin(signupEmail, signupPassword, signupFirstname, signupLastname);
 
     if (signUpError) {
       setError(signUpError.message || 'Failed to create account');
@@ -107,7 +110,8 @@ const AdminLogin = () => {
     }
 
     setSuccessMessage('Admin account created successfully! You can now sign in with admin privileges.');
-    setSignupUsername('');
+    setSignupFirstname('');
+    setSignupLastname('');
     setSignupEmail('');
     setSignupPassword('');
     setSignupConfirmPassword('');
@@ -315,18 +319,34 @@ const AdminLogin = () => {
                   </AlertDescription>
                 </Alert>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
-                  <Input
-                    id="signup-username"
-                    type="text"
-                    placeholder="Enter username"
-                    value={signupUsername}
-                    onChange={(e) => setSignupUsername(e.target.value)}
-                    disabled={loading}
-                    autoComplete="username"
-                    maxLength={50}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-firstname">First Name</Label>
+                    <Input
+                      id="signup-firstname"
+                      type="text"
+                      placeholder="John"
+                      value={signupFirstname}
+                      onChange={(e) => setSignupFirstname(e.target.value)}
+                      disabled={loading}
+                      autoComplete="given-name"
+                      maxLength={50}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-lastname">Last Name</Label>
+                    <Input
+                      id="signup-lastname"
+                      type="text"
+                      placeholder="Doe"
+                      value={signupLastname}
+                      onChange={(e) => setSignupLastname(e.target.value)}
+                      disabled={loading}
+                      autoComplete="family-name"
+                      maxLength={50}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">

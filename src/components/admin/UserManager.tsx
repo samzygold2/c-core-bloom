@@ -12,7 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface UserProfile {
   id: string;
-  username: string;
+  firstname: string;
+  lastname: string;
   email: string;
   created_at: string;
 }
@@ -47,7 +48,7 @@ export const UserManager = () => {
     // Fetch all profiles
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, username, email, created_at')
+      .select('id, firstname, lastname, email, created_at')
       .order('created_at', { ascending: false });
 
     if (profilesError) {
@@ -91,7 +92,7 @@ export const UserManager = () => {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `${user.firstname} ${user.lastname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -141,12 +142,12 @@ export const UserManager = () => {
 
     toast({
       title: 'Success',
-      description: `${newRole} role assigned to ${selectedUser.username}`,
+      description: `${newRole} role assigned to ${selectedUser.firstname} ${selectedUser.lastname}`,
     });
 
     await supabase.from('audit_log').insert({
       admin_id: (await supabase.auth.getUser()).data.user?.id,
-      action: `Assigned ${newRole} role to user ${selectedUser.username}`,
+      action: `Assigned ${newRole} role to user ${selectedUser.firstname} ${selectedUser.lastname}`,
     });
 
     setShowRoleDialog(false);
@@ -162,7 +163,7 @@ export const UserManager = () => {
       return;
     }
 
-    if (!confirm(`Remove ${role} role from ${user.username}?`)) {
+    if (!confirm(`Remove ${role} role from ${user.firstname} ${user.lastname}?`)) {
       return;
     }
 
@@ -183,12 +184,12 @@ export const UserManager = () => {
 
     toast({
       title: 'Success',
-      description: `${role} role removed from ${user.username}`,
+      description: `${role} role removed from ${user.firstname} ${user.lastname}`,
     });
 
     await supabase.from('audit_log').insert({
       admin_id: (await supabase.auth.getUser()).data.user?.id,
-      action: `Removed ${role} role from user ${user.username}`,
+      action: `Removed ${role} role from user ${user.firstname} ${user.lastname}`,
     });
 
     fetchUsers();
@@ -224,7 +225,7 @@ export const UserManager = () => {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Search by Username or Email</Label>
+              <Label>Search by Name or Email</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -276,7 +277,7 @@ export const UserManager = () => {
                         <User className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">{user.username}</h3>
+                        <h3 className="font-semibold">{user.firstname} {user.lastname}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Mail className="h-3 w-3" />
                           {user.email}
@@ -329,7 +330,7 @@ export const UserManager = () => {
       <AlertDialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Assign Role to {selectedUser?.username}</AlertDialogTitle>
+            <AlertDialogTitle>Assign Role to {selectedUser?.firstname} {selectedUser?.lastname}</AlertDialogTitle>
             <AlertDialogDescription>
               <div className="space-y-4 mt-4">
                 <div>

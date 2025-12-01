@@ -12,7 +12,8 @@ import { z } from 'zod';
 const signUpSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
+  firstname: z.string().min(2, 'First name must be at least 2 characters'),
+  lastname: z.string().min(2, 'Last name must be at least 2 characters'),
 });
 
 const signInSchema = z.object({
@@ -24,7 +25,8 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -63,8 +65,8 @@ const Auth = () => {
           navigate('/dashboard');
         }
       } else {
-        const validated = signUpSchema.parse({ email, password, username });
-        const { error } = await signUp(validated.email, validated.password, validated.username);
+        const validated = signUpSchema.parse({ email, password, firstname, lastname });
+        const { error } = await signUp(validated.email, validated.password, validated.firstname, validated.lastname);
         
         if (error) {
           if (error.message.includes('User already registered')) {
@@ -229,16 +231,29 @@ const Auth = () => {
             </TabsContent>
             <TabsContent value="signup">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
-                  <Input
-                    id="signup-username"
-                    type="text"
-                    placeholder="johndoe"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-firstname">First Name</Label>
+                    <Input
+                      id="signup-firstname"
+                      type="text"
+                      placeholder="John"
+                      value={firstname}
+                      onChange={(e) => setFirstname(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-lastname">Last Name</Label>
+                    <Input
+                      id="signup-lastname"
+                      type="text"
+                      placeholder="Doe"
+                      value={lastname}
+                      onChange={(e) => setLastname(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
