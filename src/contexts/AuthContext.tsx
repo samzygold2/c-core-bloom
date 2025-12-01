@@ -8,8 +8,8 @@ interface AuthContextType {
   session: Session | null;
   isAdmin: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, username: string) => Promise<{ error: any }>;
-  signUpAdmin: (email: string, password: string, username: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstname: string, lastname: string) => Promise<{ error: any }>;
+  signUpAdmin: (email: string, password: string, firstname: string, lastname: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsAdmin(!!data);
   };
 
-  const signUp = async (email: string, password: string, username: string) => {
+  const signUp = async (email: string, password: string, firstname: string, lastname: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -73,7 +73,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          username
+          firstname,
+          lastname
         }
       }
     });
@@ -81,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const signUpAdmin = async (email: string, password: string, username: string) => {
+  const signUpAdmin = async (email: string, password: string, firstname: string, lastname: string) => {
     const redirectUrl = `${window.location.origin}/admin-login`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -90,7 +91,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          username
+          firstname,
+          lastname
         }
       }
     });

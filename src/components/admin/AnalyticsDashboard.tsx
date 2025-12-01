@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, BookOpen, Trophy, TrendingUp, Activity, Clock, BarChart3, UserCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, BookOpen, Trophy, TrendingUp, Activity, Clock, BarChart3, UserCheck, Download } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { downloadTestResultPDF } from '@/lib/pdfGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 interface Stats {
   totalUsers: number;
@@ -22,13 +25,20 @@ interface TestPerformance {
 }
 
 interface RecentActivity {
+  id: string;
   username: string;
+  email: string;
   testTitle: string;
   score: number;
+  totalQuestions: number;
   timestamp: string;
+  startTime: string;
+  endTime: string;
+  answers: any;
 }
 
 export const AnalyticsDashboard = () => {
+  const { toast } = useToast();
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalTests: 0,
@@ -131,7 +141,16 @@ export const AnalyticsDashboard = () => {
   const fetchRecentActivity = async () => {
     const { data } = await supabase
       .from('user_tests')
-      .select('score, created_at, tests(title), profiles(username)')
+      .select(`
+        id,
+        score,
+        start_time,
+        end_time,
+        answers,
+        created_at,
+        tests(title, total_questions),
+        profiles(firstname, lastname, email)
+      `)
       .not('score', 'is', null)
       .order('created_at', { ascending: false })
       .limit(5);
@@ -139,13 +158,45 @@ export const AnalyticsDashboard = () => {
     if (!data) return;
 
     const activity: RecentActivity[] = data.map((item: any) => ({
-      username: item.profiles?.username || 'Unknown User',
+      id: item.id,
+      username: item.profiles ? `${item.profiles.firstname} ${item.profiles.lastname}` : 'Unknown User',
+      email: item.profiles?.email || '',
       testTitle: item.tests?.title || 'Unknown Test',
       score: item.score,
+      totalQuestions: item.tests?.total_questions || 0,
       timestamp: new Date(item.created_at).toLocaleString(),
+      startTime: item.start_time,
+      endTime: item.end_time,
+      answers: item.answers,
     }));
 
     setRecentActivity(activity);
+  };
+
+  const handleDownloadPDF = (activity: RecentActivity) => {
+    try {
+      downloadTestResultPDF({
+        studentName: activity.username,
+        email: activity.email,
+        testTitle: activity.testTitle,
+        score: activity.score,
+        totalQuestions: activity.totalQuestions,
+        startTime: activity.startTime,
+        endTime: activity.endTime,
+        answers: activity.answers,
+      });
+      
+      toast({
+        title: 'PDF Downloaded',
+        description: `Test result PDF for ${activity.username} downloaded successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -272,14 +323,24 @@ export const AnalyticsDashboard = () => {
               <p className="text-sm text-muted-foreground">No recent activity</p>
             ) : (
               recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <div className="space-y-1">
+                <div key={index} className="flex items-center justify-between border-b pb-2 last:border-0 gap-2">
+                  <div className="space-y-1 flex-1">
                     <p className="text-sm font-medium">{activity.username}</p>
                     <p className="text-xs text-muted-foreground">{activity.testTitle}</p>
                     <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
                   </div>
-                  <div className={`text-lg font-bold ${activity.score >= 50 ? 'text-green-500' : 'text-destructive'}`}>
-                    {activity.score}
+                  <div className="flex items-center gap-2">
+                    <div className={`text-lg font-bold ${activity.score >= 50 ? 'text-green-500' : 'text-destructive'}`}>
+                      {activity.score}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownloadPDF(activity)}
+                      title="Download PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))
