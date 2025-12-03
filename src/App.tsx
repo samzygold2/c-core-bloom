@@ -13,6 +13,8 @@ import TestTaking from "./pages/TestTaking";
 import Results from "./pages/Results";
 import ResultDetail from "./pages/ResultDetail";
 import Admin from "./pages/Admin";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,12 +30,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/super-admin-login" element={<SuperAdminLogin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/test/:testId" element={<TestTaking />} />
             <Route path="/results" element={<Results />} />
             <Route path="/results/:resultId" element={<ResultDetail />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/super-admin" element={<SuperAdmin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

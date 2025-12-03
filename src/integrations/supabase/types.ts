@@ -97,6 +97,36 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          log_level: string
+          message: string
+          metadata: Json | null
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          log_level: string
+          message: string
+          metadata?: Json | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          log_level?: string
+          message?: string
+          metadata?: Json | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       tests: {
         Row: {
           created_at: string | null
