@@ -109,7 +109,7 @@ const AdminLogin = () => {
       return;
     }
 
-    setSuccessMessage('Admin account created successfully! You can now sign in with admin privileges.');
+    setSuccessMessage('Account created! An existing admin must assign you the admin role before you can access the admin panel.');
     setSignupFirstname('');
     setSignupLastname('');
     setSignupEmail('');
@@ -230,14 +230,14 @@ const AdminLogin = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Admin Access</CardTitle>
           <CardDescription>
-            Sign in to access the admin panel or create a new admin account
+            Sign in to access the admin panel or request admin access
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signup">Request Access</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
@@ -392,7 +392,7 @@ const AdminLogin = () => {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating account...' : 'Create Admin Account'}
+                  {loading ? 'Creating account...' : 'Request Admin Access'}
                 </Button>
               </form>
             </TabsContent>
