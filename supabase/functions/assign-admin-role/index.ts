@@ -19,10 +19,20 @@ serve(async (req) => {
 
     const { userId, role = 'admin' } = await req.json();
 
-    if (!userId) {
+    // Input validation
+    if (!userId || typeof userId !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
+        JSON.stringify({ error: 'Valid User ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Only allow 'admin' role assignment - super_admin cannot be self-assigned
+    if (role !== 'admin') {
+      console.error(`Attempted to assign restricted role: ${role}`);
+      return new Response(
+        JSON.stringify({ error: 'Only admin role can be assigned through this endpoint' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

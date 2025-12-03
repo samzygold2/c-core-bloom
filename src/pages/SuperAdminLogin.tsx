@@ -13,9 +13,6 @@ const SuperAdminLogin = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [firstname, setFirstname] = useState('');
-  const [lastname, setLastname] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -72,66 +69,6 @@ const SuperAdminLogin = () => {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const redirectUrl = `${window.location.origin}/super-admin-login`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            firstname,
-            lastname
-          }
-        }
-      });
-
-      if (error) {
-        toast({
-          title: 'Signup Failed',
-          description: error.message,
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Assign super_admin role using edge function
-      if (data.user) {
-        const { error: roleError } = await supabase.functions.invoke('assign-admin-role', {
-          body: { userId: data.user.id, role: 'super_admin' }
-        });
-
-        if (roleError) {
-          toast({
-            title: 'Role Assignment Warning',
-            description: 'Account created but role assignment had issues. Contact support.',
-            variant: 'destructive',
-          });
-          return;
-        }
-      }
-
-      toast({
-        title: 'Super Admin Account Created',
-        description: 'You can now log in with your credentials.',
-      });
-      setMode('login');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
       <Card className="w-full max-w-md border-purple-500/30 bg-slate-900/90 backdrop-blur">
@@ -141,35 +78,11 @@ const SuperAdminLogin = () => {
           </div>
           <CardTitle className="text-2xl text-white">Super Admin Portal</CardTitle>
           <CardDescription className="text-slate-400">
-            {mode === 'login' ? 'Secure access for system administrators' : 'Create super admin account'}
+            Secure access for system administrators
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={mode === 'login' ? handleLogin : handleSignup} className="space-y-4">
-            {mode === 'signup' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstname" className="text-slate-300">First Name</Label>
-                  <Input
-                    id="firstname"
-                    value={firstname}
-                    onChange={(e) => setFirstname(e.target.value)}
-                    required
-                    className="bg-slate-800 border-slate-700 text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastname" className="text-slate-300">Last Name</Label>
-                  <Input
-                    id="lastname"
-                    value={lastname}
-                    onChange={(e) => setLastname(e.target.value)}
-                    required
-                    className="bg-slate-800 border-slate-700 text-white"
-                  />
-                </div>
-              </div>
-            )}
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-slate-300">Email</Label>
               <Input
@@ -207,17 +120,9 @@ const SuperAdminLogin = () => {
               disabled={isLoading}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white"
             >
-              {isLoading ? (mode === 'login' ? 'Signing In...' : 'Creating Account...') : (mode === 'login' ? 'Sign In' : 'Create Account')}
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-              className="text-purple-400 hover:text-purple-300 text-sm"
-            >
-              {mode === 'login' ? 'Need to create a super admin account?' : 'Already have an account? Sign in'}
-            </button>
-          </div>
           <div className="mt-4 text-center">
             <button
               onClick={() => navigate('/')}
