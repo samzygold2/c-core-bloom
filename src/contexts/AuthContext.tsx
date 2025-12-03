@@ -83,9 +83,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUpAdmin = async (email: string, password: string, firstname: string, lastname: string) => {
+    // Admin signup creates a regular user account
+    // An existing admin must manually assign the admin role via UserManager
     const redirectUrl = `${window.location.origin}/admin-login`;
     
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -96,25 +98,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     });
-    
-    if (error) {
-      return { error };
-    }
-
-    // Assign admin role using edge function
-    if (data.user) {
-      try {
-        const { error: roleError } = await supabase.functions.invoke('assign-admin-role', {
-          body: { userId: data.user.id, role: 'admin' }
-        });
-        
-        if (roleError) {
-          console.error('Error assigning admin role:', roleError);
-        }
-      } catch (e) {
-        console.error('Failed to assign admin role:', e);
-      }
-    }
     
     return { error };
   };
