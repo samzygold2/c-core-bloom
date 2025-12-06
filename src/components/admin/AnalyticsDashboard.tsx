@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, Trophy, TrendingUp, Activity, Clock, BarChart3, UserCheck, Download } from 'lucide-react';
+import { Users, BookOpen, Trophy, TrendingUp, Activity, Clock, BarChart3, UserCheck, Download, FileDown } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { downloadTestResultPDF } from '@/lib/pdfGenerator';
+import { downloadTestResultPDF, downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 
 interface Stats {
@@ -50,11 +50,14 @@ export const AnalyticsDashboard = () => {
   });
   const [testPerformance, setTestPerformance] = useState<TestPerformance[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [allResults, setAllResults] = useState<RecentActivity[]>([]);
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   useEffect(() => {
     fetchStats();
     fetchTestPerformance();
     fetchRecentActivity();
+    fetchAllResults();
   }, []);
 
   const fetchStats = async () => {
@@ -173,6 +176,40 @@ export const AnalyticsDashboard = () => {
     setRecentActivity(activity);
   };
 
+  const fetchAllResults = async () => {
+    const { data } = await supabase
+      .from('user_tests')
+      .select(`
+        id,
+        score,
+        start_time,
+        end_time,
+        answers,
+        created_at,
+        tests(title, total_questions),
+        profiles(firstname, lastname, email)
+      `)
+      .not('score', 'is', null)
+      .order('created_at', { ascending: false });
+
+    if (!data) return;
+
+    const results: RecentActivity[] = data.map((item: any) => ({
+      id: item.id,
+      username: item.profiles ? `${item.profiles.firstname} ${item.profiles.lastname}` : 'Unknown User',
+      email: item.profiles?.email || '',
+      testTitle: item.tests?.title || 'Unknown Test',
+      score: item.score,
+      totalQuestions: item.tests?.total_questions || 0,
+      timestamp: new Date(item.created_at).toLocaleString(),
+      startTime: item.start_time,
+      endTime: item.end_time,
+      answers: item.answers,
+    }));
+
+    setAllResults(results);
+  };
+
   const handleDownloadPDF = (activity: RecentActivity) => {
     try {
       downloadTestResultPDF({
@@ -199,11 +236,61 @@ export const AnalyticsDashboard = () => {
     }
   };
 
+  const handleDownloadAllPDF = async () => {
+    if (allResults.length === 0) {
+      toast({
+        title: 'No Results',
+        description: 'No test results available to download',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDownloadingAll(true);
+    try {
+      downloadBulkTestResultsPDF(
+        allResults.map(r => ({
+          studentName: r.username,
+          email: r.email,
+          testTitle: r.testTitle,
+          score: r.score,
+          totalQuestions: r.totalQuestions,
+          startTime: r.startTime,
+          endTime: r.endTime,
+          answers: r.answers,
+        }))
+      );
+      
+      toast({
+        title: 'PDF Downloaded',
+        description: `Complete report with ${allResults.length} results downloaded`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate bulk PDF',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Performance Analytics</h2>
-        <p className="text-muted-foreground">Monitor system performance and user activity</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Performance Analytics</h2>
+          <p className="text-muted-foreground">Monitor system performance and user activity</p>
+        </div>
+        <Button 
+          onClick={handleDownloadAllPDF} 
+          disabled={downloadingAll || allResults.length === 0}
+          className="gap-2"
+        >
+          <FileDown className="h-4 w-4" />
+          {downloadingAll ? 'Generating...' : `Download All Results (${allResults.length})`}
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
