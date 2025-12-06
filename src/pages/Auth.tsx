@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 
@@ -21,18 +23,52 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+interface AdminProfile {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+}
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
+  const [selectedAdminId, setSelectedAdminId] = useState<string>('');
+  const [admins, setAdmins] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const { signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  const fetchAdmins = async () => {
+    // Get all admin user IDs
+    const { data: adminRoles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+
+    if (!adminRoles || adminRoles.length === 0) return;
+
+    // Get profiles of admins
+    const adminIds = adminRoles.map(r => r.user_id);
+    const { data: adminProfiles } = await supabase
+      .from('profiles')
+      .select('id, firstname, lastname, email')
+      .in('id', adminIds);
+
+    if (adminProfiles) {
+      setAdmins(adminProfiles);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +102,7 @@ const Auth = () => {
         }
       } else {
         const validated = signUpSchema.parse({ email, password, firstname, lastname });
-        const { error } = await signUp(validated.email, validated.password, validated.firstname, validated.lastname);
+        const { error, data } = await signUp(validated.email, validated.password, validated.firstname, validated.lastname);
         
         if (error) {
           if (error.message.includes('User already registered')) {
@@ -83,6 +119,14 @@ const Auth = () => {
             });
           }
         } else {
+          // Update the profile with selected admin if one was chosen
+          if (selectedAdminId && data?.user) {
+            await supabase
+              .from('profiles')
+              .update({ assigned_admin_id: selectedAdminId })
+              .eq('id', data.user.id);
+          }
+          
           toast({
             title: 'Success',
             description: 'Account created successfully! You can now login.',
@@ -276,6 +320,26 @@ const Auth = () => {
                     required
                   />
                 </div>
+                {admins.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-admin">Select Your Admin (Optional)</Label>
+                    <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an admin to be assigned to" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {admins.map((admin) => (
+                          <SelectItem key={admin.id} value={admin.id}>
+                            {admin.firstname} {admin.lastname}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Selecting an admin helps them track your progress
+                    </p>
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Creating account...' : 'Sign Up'}
                 </Button>

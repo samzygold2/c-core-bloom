@@ -10,6 +10,7 @@ import { TestManager } from '@/components/admin/TestManager';
 import { QuestionManager } from '@/components/admin/QuestionManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { UserManager } from '@/components/admin/UserManager';
+import { AssignedUsersManager } from '@/components/admin/AssignedUsersManager';
 
 const Admin = () => {
   const { user, isAdmin } = useAuth();
@@ -47,7 +48,8 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="tests">Tests</TabsTrigger>
             <TabsTrigger value="questions">Questions</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="my-users">My Users</TabsTrigger>
+            <TabsTrigger value="users">All Users</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -57,6 +59,10 @@ const Admin = () => {
 
           <TabsContent value="questions">
             <QuestionManager />
+          </TabsContent>
+
+          <TabsContent value="my-users">
+            <AssignedUsersManager />
           </TabsContent>
 
           <TabsContent value="users">
