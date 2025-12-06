@@ -37,27 +37,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          assigned_admin_id: string | null
           created_at: string | null
           email: string
           firstname: string
           id: string
+          is_waiting: boolean | null
           lastname: string
         }
         Insert: {
+          assigned_admin_id?: string | null
           created_at?: string | null
           email: string
           firstname?: string
           id: string
+          is_waiting?: boolean | null
           lastname?: string
         }
         Update: {
+          assigned_admin_id?: string | null
           created_at?: string | null
           email?: string
           firstname?: string
           id?: string
+          is_waiting?: boolean | null
           lastname?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_assigned_admin_id_fkey"
+            columns: ["assigned_admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       questions: {
         Row: {
