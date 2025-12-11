@@ -164,10 +164,14 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="3">3 questions</SelectItem>
                 <SelectItem value="5">5 questions</SelectItem>
                 <SelectItem value="10">10 questions</SelectItem>
                 <SelectItem value="15">15 questions</SelectItem>
+                <SelectItem value="20">20 questions</SelectItem>
+                <SelectItem value="30">30 questions</SelectItem>
+                <SelectItem value="40">40 questions</SelectItem>
+                <SelectItem value="50">50 questions</SelectItem>
+                <SelectItem value="60">60 questions</SelectItem>
               </SelectContent>
             </Select>
           </div>
