@@ -299,20 +299,20 @@ const SuperAdmin = () => {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'super_admin':
-        return 'bg-purple-600 text-white';
+        return 'bg-blue-700 text-white';
       case 'admin':
-        return 'bg-red-600 text-white';
+        return 'bg-blue-500 text-white';
       case 'user':
-        return 'bg-blue-600 text-white';
+        return 'bg-slate-500 text-white';
       default:
-        return 'bg-gray-600 text-white';
+        return 'bg-slate-400 text-white';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-blue-600 text-xl">Loading...</div>
       </div>
     );
   }
@@ -322,17 +322,17 @@ const SuperAdmin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-white">
       {/* Header */}
-      <header className="border-b border-purple-500/30 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-blue-200 bg-white/80 backdrop-blur sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Super Admin Dashboard</h1>
-              <p className="text-sm text-slate-400">System Monitoring & Management</p>
+              <h1 className="text-xl font-bold text-slate-800">Super Admin Dashboard</h1>
+              <p className="text-sm text-slate-500">System Monitoring & Management</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -340,7 +340,7 @@ const SuperAdmin = () => {
               variant="outline"
               size="sm"
               onClick={fetchAllData}
-              className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20"
+              className="border-blue-300 text-blue-600 hover:bg-blue-50"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -360,68 +360,68 @@ const SuperAdmin = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-blue-400" />
+                <Users className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
-                  <p className="text-xs text-slate-400">Total Users</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.totalUsers}</p>
+                  <p className="text-xs text-slate-500">Total Users</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <UserCog className="h-8 w-8 text-red-400" />
+                <UserCog className="h-8 w-8 text-blue-600" />
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.totalAdmins}</p>
-                  <p className="text-xs text-slate-400">Admins</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.totalAdmins}</p>
+                  <p className="text-xs text-slate-500">Admins</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-green-400" />
+                <FileText className="h-8 w-8 text-blue-400" />
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.totalTests}</p>
-                  <p className="text-xs text-slate-400">Total Tests</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.totalTests}</p>
+                  <p className="text-xs text-slate-500">Total Tests</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Database className="h-8 w-8 text-yellow-400" />
+                <Database className="h-8 w-8 text-sky-500" />
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.totalQuestions}</p>
-                  <p className="text-xs text-slate-400">Questions</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.totalQuestions}</p>
+                  <p className="text-xs text-slate-500">Questions</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Activity className="h-8 w-8 text-emerald-400" />
+                <Activity className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.activeTests}</p>
-                  <p className="text-xs text-slate-400">Active Tests</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.activeTests}</p>
+                  <p className="text-xs text-slate-500">Active Tests</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <CheckCircle className="h-8 w-8 text-purple-400" />
+                <CheckCircle className="h-8 w-8 text-blue-600" />
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.completedTests}</p>
-                  <p className="text-xs text-slate-400">Completed</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.completedTests}</p>
+                  <p className="text-xs text-slate-500">Completed</p>
                 </div>
               </div>
             </CardContent>
@@ -430,12 +430,12 @@ const SuperAdmin = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="bg-slate-800/50 border border-slate-700">
-            <TabsTrigger value="users" className="data-[state=active]:bg-purple-600">
+          <TabsList className="bg-white border border-blue-200 shadow-sm">
+            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Users className="h-4 w-4 mr-2" />
               User Management
             </TabsTrigger>
-            <TabsTrigger value="audit" className="data-[state=active]:bg-purple-600">
+            <TabsTrigger value="audit" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Activity className="h-4 w-4 mr-2" />
               Audit Logs
             </TabsTrigger>
@@ -443,10 +443,10 @@ const SuperAdmin = () => {
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-blue-100 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">User Management</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">User Management</CardTitle>
+                <CardDescription className="text-slate-500">
                   Manage user roles and permissions across the platform
                 </CardDescription>
                 <div className="flex gap-4 mt-4">
@@ -456,11 +456,11 @@ const SuperAdmin = () => {
                       placeholder="Search users..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-slate-700 border-slate-600 text-white"
+                      className="pl-10 bg-white border-blue-200 text-slate-800"
                     />
                   </div>
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-40 bg-slate-700 border-slate-600 text-white">
+                    <SelectTrigger className="w-40 bg-white border-blue-200 text-slate-800">
                       <SelectValue placeholder="Filter by role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -473,24 +473,24 @@ const SuperAdmin = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg border border-slate-700 overflow-hidden">
+                <div className="rounded-lg border border-blue-100 overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-700/50 hover:bg-slate-700/50">
-                        <TableHead className="text-slate-300">User</TableHead>
-                        <TableHead className="text-slate-300">Email</TableHead>
-                        <TableHead className="text-slate-300">Roles</TableHead>
-                        <TableHead className="text-slate-300">Joined</TableHead>
-                        <TableHead className="text-slate-300">Actions</TableHead>
+                      <TableRow className="bg-blue-50 hover:bg-blue-50">
+                        <TableHead className="text-slate-600">User</TableHead>
+                        <TableHead className="text-slate-600">Email</TableHead>
+                        <TableHead className="text-slate-600">Roles</TableHead>
+                        <TableHead className="text-slate-600">Joined</TableHead>
+                        <TableHead className="text-slate-600">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredUsers.map((user) => (
-                        <TableRow key={user.id} className="border-slate-700 hover:bg-slate-700/30">
-                          <TableCell className="text-white font-medium">
+                        <TableRow key={user.id} className="border-blue-50 hover:bg-blue-50/50">
+                          <TableCell className="text-slate-800 font-medium">
                             {user.firstname} {user.lastname}
                           </TableCell>
-                          <TableCell className="text-slate-300">{user.email}</TableCell>
+                          <TableCell className="text-slate-600">{user.email}</TableCell>
                           <TableCell>
                             <div className="flex gap-1 flex-wrap">
                               {user.roles.map((role) => (
@@ -500,7 +500,7 @@ const SuperAdmin = () => {
                               ))}
                             </div>
                           </TableCell>
-                          <TableCell className="text-slate-400">
+                          <TableCell className="text-slate-500">
                             {new Date(user.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
@@ -509,7 +509,7 @@ const SuperAdmin = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handlePasswordRecovery(user.email, `${user.firstname} ${user.lastname}`)}
-                                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/20 text-xs"
+                                className="border-amber-400 text-amber-600 hover:bg-amber-50 text-xs"
                               >
                                 <KeyRound className="h-3 w-3 mr-1" />
                                 Reset Password
@@ -519,7 +519,7 @@ const SuperAdmin = () => {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleAssignRole(user.id, 'admin')}
-                                  className="border-green-500/50 text-green-400 hover:bg-green-500/20 text-xs"
+                                  className="border-blue-400 text-blue-600 hover:bg-blue-50 text-xs"
                                 >
                                   + Admin
                                 </Button>
@@ -529,7 +529,7 @@ const SuperAdmin = () => {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleRemoveRole(user.id, 'admin')}
-                                  className="border-red-500/50 text-red-400 hover:bg-red-500/20 text-xs"
+                                  className="border-red-400 text-red-500 hover:bg-red-50 text-xs"
                                 >
                                   - Admin
                                 </Button>
@@ -547,34 +547,34 @@ const SuperAdmin = () => {
 
           {/* Audit Logs Tab */}
           <TabsContent value="audit">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-white border-blue-100 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-white">Audit Logs</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-slate-800">Audit Logs</CardTitle>
+                <CardDescription className="text-slate-500">
                   Track all administrative actions across the platform
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg border border-slate-700 overflow-hidden">
+                <div className="rounded-lg border border-blue-100 overflow-hidden">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-700/50 hover:bg-slate-700/50">
-                        <TableHead className="text-slate-300">Timestamp</TableHead>
-                        <TableHead className="text-slate-300">Admin</TableHead>
-                        <TableHead className="text-slate-300">Action</TableHead>
+                      <TableRow className="bg-blue-50 hover:bg-blue-50">
+                        <TableHead className="text-slate-600">Timestamp</TableHead>
+                        <TableHead className="text-slate-600">Admin</TableHead>
+                        <TableHead className="text-slate-600">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {auditLogs.map((log) => (
-                        <TableRow key={log.id} className="border-slate-700 hover:bg-slate-700/30">
-                          <TableCell className="text-slate-400">
+                        <TableRow key={log.id} className="border-blue-50 hover:bg-blue-50/50">
+                          <TableCell className="text-slate-500">
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
+                              <Clock className="h-4 w-4 text-blue-400" />
                               {new Date(log.timestamp).toLocaleString()}
                             </div>
                           </TableCell>
-                          <TableCell className="text-white">{log.admin_email}</TableCell>
-                          <TableCell className="text-slate-300">{log.action}</TableCell>
+                          <TableCell className="text-slate-700">{log.admin_email}</TableCell>
+                          <TableCell className="text-slate-600">{log.action}</TableCell>
                         </TableRow>
                       ))}
                       {auditLogs.length === 0 && (
