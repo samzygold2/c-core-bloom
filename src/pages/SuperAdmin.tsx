@@ -21,7 +21,8 @@ import {
   LogOut,
   Database,
   FileText,
-  UserCog
+  UserCog,
+  KeyRound
 } from 'lucide-react';
 
 interface AuditLog {
@@ -249,6 +250,36 @@ const SuperAdmin = () => {
     fetchAuditLogs();
   };
 
+  const handlePasswordRecovery = async (userEmail: string, userName: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send password recovery email.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Log the action
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('audit_log').insert({
+        admin_id: user.id,
+        action: `Sent password recovery email to ${userName} (${userEmail})`,
+      });
+    }
+
+    toast({
+      title: 'Password Recovery Sent',
+      description: `Password recovery email sent to ${userEmail}.`,
+    });
+    fetchAuditLogs();
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/super-admin-login');
@@ -473,7 +504,16 @@ const SuperAdmin = () => {
                             {new Date(user.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handlePasswordRecovery(user.email, `${user.firstname} ${user.lastname}`)}
+                                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/20 text-xs"
+                              >
+                                <KeyRound className="h-3 w-3 mr-1" />
+                                Reset Password
+                              </Button>
                               {!user.roles.includes('admin') && (
                                 <Button
                                   size="sm"
