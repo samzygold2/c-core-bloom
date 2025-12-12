@@ -17,6 +17,10 @@ interface Question {
   options: string[];
 }
 
+interface ShuffledQuestion extends Question {
+  shuffledOptions: { text: string; originalIndex: number }[];
+}
+
 interface Test {
   id: string;
   title: string;
@@ -31,9 +35,9 @@ const TestTaking = () => {
   const { toast } = useToast();
   
   const [test, setTest] = useState<Test | null>(null);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<ShuffledQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>({}); // Stores ORIGINAL indices
   const [loading, setLoading] = useState(true);
   const [userTestId, setUserTestId] = useState<string>('');
 
@@ -84,7 +88,18 @@ const TestTaking = () => {
       options: q.options as unknown as string[]
     }));
 
-    const shuffled = [...typedQuestions].sort(() => Math.random() - 0.5);
+    // Shuffle questions and their options
+    const shuffledQuestions: ShuffledQuestion[] = [...typedQuestions]
+      .sort(() => Math.random() - 0.5)
+      .map(q => {
+        // Create shuffled options with original index mapping
+        const optionsWithIndex = q.options.map((text, originalIndex) => ({ text, originalIndex }));
+        const shuffledOptions = [...optionsWithIndex].sort(() => Math.random() - 0.5);
+        return {
+          ...q,
+          shuffledOptions
+        };
+      });
 
     const { data: userTest, error: userTestError } = await supabase
       .from('user_tests')
@@ -107,15 +122,15 @@ const TestTaking = () => {
     }
 
     setTest(testData);
-    setQuestions(shuffled);
+    setQuestions(shuffledQuestions);
     setUserTestId(userTest.id);
     setLoading(false);
   };
 
-  const handleAnswerSelect = (questionId: string, optionIndex: number) => {
+  const handleAnswerSelect = (questionId: string, originalIndex: number) => {
     setAnswers((prev) => ({
       ...prev,
-      [questionId]: optionIndex,
+      [questionId]: originalIndex,
     }));
   };
 
@@ -195,11 +210,11 @@ const TestTaking = () => {
               value={answers[currentQuestion?.id]?.toString() || ''}
               onValueChange={(value) => handleAnswerSelect(currentQuestion.id, parseInt(value))}
             >
-              {currentQuestion?.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent transition-colors">
-                  <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                  <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                    {option}
+              {currentQuestion?.shuffledOptions.map((option, displayIndex) => (
+                <div key={displayIndex} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent transition-colors">
+                  <RadioGroupItem value={option.originalIndex.toString()} id={`option-${displayIndex}`} />
+                  <Label htmlFor={`option-${displayIndex}`} className="flex-1 cursor-pointer">
+                    {option.text}
                   </Label>
                 </div>
               ))}
