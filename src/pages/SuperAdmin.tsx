@@ -7,13 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Shield, 
   Users, 
   Activity, 
-  AlertTriangle, 
   CheckCircle, 
   Clock, 
   Search,
@@ -22,8 +23,14 @@ import {
   Database,
   FileText,
   UserCog,
-  KeyRound
+  KeyRound,
+  Settings,
+  BarChart3,
+  BookOpen,
+  AlertTriangle,
+  Download
 } from 'lucide-react';
+import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 
 interface AuditLog {
   id: string;
@@ -31,6 +38,15 @@ interface AuditLog {
   action: string;
   timestamp: string;
   admin_email?: string;
+}
+
+interface SystemLog {
+  id: string;
+  log_level: string;
+  message: string;
+  source: string;
+  created_at: string;
+  metadata: any;
 }
 
 interface UserWithRoles {
@@ -42,6 +58,19 @@ interface UserWithRoles {
   roles: string[];
 }
 
+interface TestResult {
+  id: string;
+  username: string;
+  email: string;
+  testTitle: string;
+  score: number;
+  totalQuestions: number;
+  timestamp: string;
+  startTime: string;
+  endTime: string;
+  answers: any;
+}
+
 interface SystemStats {
   totalUsers: number;
   totalAdmins: number;
@@ -49,13 +78,16 @@ interface SystemStats {
   totalQuestions: number;
   activeTests: number;
   completedTests: number;
+  averageScore: number;
 }
 
 const SuperAdmin = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [users, setUsers] = useState<UserWithRoles[]>([]);
+  const [allResults, setAllResults] = useState<TestResult[]>([]);
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
     totalAdmins: 0,
@@ -63,9 +95,11 @@ const SuperAdmin = () => {
     totalQuestions: 0,
     activeTests: 0,
     completedTests: 0,
+    averageScore: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -106,8 +140,10 @@ const SuperAdmin = () => {
   const fetchAllData = async () => {
     await Promise.all([
       fetchAuditLogs(),
+      fetchSystemLogs(),
       fetchUsers(),
       fetchStats(),
+      fetchAllResults(),
     ]);
   };
 
@@ -123,7 +159,6 @@ const SuperAdmin = () => {
       return;
     }
 
-    // Fetch admin emails for each log
     const logsWithEmails = await Promise.all(
       (logs || []).map(async (log) => {
         const { data: profile } = await supabase
@@ -141,6 +176,21 @@ const SuperAdmin = () => {
     setAuditLogs(logsWithEmails);
   };
 
+  const fetchSystemLogs = async () => {
+    const { data: logs, error } = await supabase
+      .from('system_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Error fetching system logs:', error);
+      return;
+    }
+
+    setSystemLogs(logs || []);
+  };
+
   const fetchUsers = async () => {
     const { data: profiles, error } = await supabase
       .from('profiles')
@@ -152,7 +202,6 @@ const SuperAdmin = () => {
       return;
     }
 
-    // Fetch roles for each user
     const usersWithRoles = await Promise.all(
       (profiles || []).map(async (profile) => {
         const { data: roles } = await supabase
@@ -176,15 +225,19 @@ const SuperAdmin = () => {
       { count: totalTests },
       { count: totalQuestions },
       { count: activeTests },
-      { count: completedTests },
+      { data: completedAttempts },
     ] = await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('user_roles').select('*').eq('role', 'admin'),
       supabase.from('tests').select('*', { count: 'exact', head: true }),
       supabase.from('questions').select('*', { count: 'exact', head: true }),
       supabase.from('tests').select('*', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('user_tests').select('*', { count: 'exact', head: true }).not('end_time', 'is', null),
+      supabase.from('user_tests').select('score').not('score', 'is', null),
     ]);
+
+    const averageScore = completedAttempts && completedAttempts.length > 0
+      ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length
+      : 0;
 
     setStats({
       totalUsers: totalUsers || 0,
@@ -192,8 +245,43 @@ const SuperAdmin = () => {
       totalTests: totalTests || 0,
       totalQuestions: totalQuestions || 0,
       activeTests: activeTests || 0,
-      completedTests: completedTests || 0,
+      completedTests: completedAttempts?.length || 0,
+      averageScore,
     });
+  };
+
+  const fetchAllResults = async () => {
+    const { data } = await supabase
+      .from('user_tests')
+      .select(`
+        id,
+        score,
+        start_time,
+        end_time,
+        answers,
+        created_at,
+        tests(title, total_questions),
+        profiles(firstname, lastname, email)
+      `)
+      .not('score', 'is', null)
+      .order('created_at', { ascending: false });
+
+    if (!data) return;
+
+    const results: TestResult[] = data.map((item: any) => ({
+      id: item.id,
+      username: item.profiles ? `${item.profiles.firstname} ${item.profiles.lastname}` : 'Unknown User',
+      email: item.profiles?.email || '',
+      testTitle: item.tests?.title || 'Unknown Test',
+      score: item.score,
+      totalQuestions: item.tests?.total_questions || 0,
+      timestamp: new Date(item.created_at).toLocaleString(),
+      startTime: item.start_time,
+      endTime: item.end_time,
+      answers: item.answers,
+    }));
+
+    setAllResults(results);
   };
 
   const handleAssignRole = async (userId: string, role: 'admin' | 'super_admin' | 'user') => {
@@ -215,6 +303,7 @@ const SuperAdmin = () => {
       description: `Successfully assigned ${role} role.`,
     });
     fetchUsers();
+    fetchAuditLogs();
   };
 
   const handleRemoveRole = async (userId: string, role: 'admin' | 'super_admin' | 'user') => {
@@ -233,7 +322,6 @@ const SuperAdmin = () => {
       return;
     }
 
-    // Log the action
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase.from('audit_log').insert({
@@ -264,7 +352,6 @@ const SuperAdmin = () => {
       return;
     }
 
-    // Log the action
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase.from('audit_log').insert({
@@ -278,6 +365,46 @@ const SuperAdmin = () => {
       description: `Password recovery email sent to ${userEmail}.`,
     });
     fetchAuditLogs();
+  };
+
+  const handleDownloadAllResults = async () => {
+    if (allResults.length === 0) {
+      toast({
+        title: 'No Results',
+        description: 'No test results available to download',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDownloadingAll(true);
+    try {
+      downloadBulkTestResultsPDF(
+        allResults.map(r => ({
+          studentName: r.username,
+          email: r.email,
+          testTitle: r.testTitle,
+          score: r.score,
+          totalQuestions: r.totalQuestions,
+          startTime: r.startTime,
+          endTime: r.endTime,
+          answers: r.answers,
+        }))
+      );
+      
+      toast({
+        title: 'Report Downloaded',
+        description: `Complete report with ${allResults.length} results downloaded`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate report',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingAll(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -309,6 +436,19 @@ const SuperAdmin = () => {
     }
   };
 
+  const getLogLevelColor = (level: string) => {
+    switch (level) {
+      case 'error':
+        return 'text-red-600 bg-red-50';
+      case 'warn':
+        return 'text-amber-600 bg-amber-50';
+      case 'info':
+        return 'text-blue-600 bg-blue-50';
+      default:
+        return 'text-slate-600 bg-slate-50';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -332,7 +472,7 @@ const SuperAdmin = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-800">Super Admin Dashboard</h1>
-              <p className="text-sm text-slate-500">System Monitoring & Management</p>
+              <p className="text-sm text-slate-500">Global System Control & Monitoring</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -359,14 +499,14 @@ const SuperAdmin = () => {
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
           <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <Users className="h-8 w-8 text-blue-500" />
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{stats.totalUsers}</p>
-                  <p className="text-xs text-slate-500">Total Users</p>
+                  <p className="text-xs text-slate-500">Users</p>
                 </div>
               </div>
             </CardContent>
@@ -388,7 +528,7 @@ const SuperAdmin = () => {
                 <FileText className="h-8 w-8 text-blue-400" />
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{stats.totalTests}</p>
-                  <p className="text-xs text-slate-500">Total Tests</p>
+                  <p className="text-xs text-slate-500">Tests</p>
                 </div>
               </div>
             </CardContent>
@@ -407,10 +547,10 @@ const SuperAdmin = () => {
           <Card className="bg-white border-blue-100 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Activity className="h-8 w-8 text-blue-500" />
+                <BookOpen className="h-8 w-8 text-blue-500" />
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{stats.activeTests}</p>
-                  <p className="text-xs text-slate-500">Active Tests</p>
+                  <p className="text-xs text-slate-500">Active</p>
                 </div>
               </div>
             </CardContent>
@@ -426,6 +566,17 @@ const SuperAdmin = () => {
               </div>
             </CardContent>
           </Card>
+          <Card className="bg-white border-blue-100 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="h-8 w-8 text-emerald-500" />
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{stats.averageScore.toFixed(0)}%</p>
+                  <p className="text-xs text-slate-500">Avg Score</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content */}
@@ -435,9 +586,17 @@ const SuperAdmin = () => {
               <Users className="h-4 w-4 mr-2" />
               User Management
             </TabsTrigger>
+            <TabsTrigger value="reports" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Global Reports
+            </TabsTrigger>
             <TabsTrigger value="audit" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Activity className="h-4 w-4 mr-2" />
               Audit Logs
+            </TabsTrigger>
+            <TabsTrigger value="system" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              System Logs
             </TabsTrigger>
           </TabsList>
 
@@ -445,9 +604,9 @@ const SuperAdmin = () => {
           <TabsContent value="users">
             <Card className="bg-white border-blue-100 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-slate-800">User Management</CardTitle>
+                <CardTitle className="text-slate-800">User & Role Management</CardTitle>
                 <CardDescription className="text-slate-500">
-                  Manage user roles and permissions across the platform
+                  Full control over all users and their permissions across the platform
                 </CardDescription>
                 <div className="flex gap-4 mt-4">
                   <div className="relative flex-1 max-w-sm">
@@ -512,7 +671,7 @@ const SuperAdmin = () => {
                                 className="border-amber-400 text-amber-600 hover:bg-amber-50 text-xs"
                               >
                                 <KeyRound className="h-3 w-3 mr-1" />
-                                Reset Password
+                                Reset
                               </Button>
                               {!user.roles.includes('admin') && (
                                 <Button
@@ -541,6 +700,75 @@ const SuperAdmin = () => {
                     </TableBody>
                   </Table>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports">
+            <Card className="bg-white border-blue-100 shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-slate-800">Global Test Results</CardTitle>
+                    <CardDescription className="text-slate-500">
+                      View and export all test results across the platform
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    onClick={handleDownloadAllResults}
+                    disabled={downloadingAll || allResults.length === 0}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {downloadingAll ? 'Generating...' : `Export All (${allResults.length})`}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg border border-blue-100 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50 hover:bg-blue-50">
+                        <TableHead className="text-slate-600">Student</TableHead>
+                        <TableHead className="text-slate-600">Test</TableHead>
+                        <TableHead className="text-slate-600">Score</TableHead>
+                        <TableHead className="text-slate-600">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allResults.slice(0, 20).map((result) => (
+                        <TableRow key={result.id} className="border-blue-50 hover:bg-blue-50/50">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-slate-800">{result.username}</p>
+                              <p className="text-xs text-slate-500">{result.email}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-700">{result.testTitle}</TableCell>
+                          <TableCell>
+                            <span className={`font-bold ${result.score >= 50 ? 'text-emerald-600' : 'text-red-500'}`}>
+                              {result.score}/{result.totalQuestions}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-slate-500">{result.timestamp}</TableCell>
+                        </TableRow>
+                      ))}
+                      {allResults.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-slate-400 py-8">
+                            No test results found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                {allResults.length > 20 && (
+                  <p className="text-sm text-slate-500 mt-4 text-center">
+                    Showing 20 of {allResults.length} results. Export to see all.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -581,6 +809,55 @@ const SuperAdmin = () => {
                         <TableRow>
                           <TableCell colSpan={3} className="text-center text-slate-400 py-8">
                             No audit logs found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* System Logs Tab */}
+          <TabsContent value="system">
+            <Card className="bg-white border-blue-100 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-slate-800">System Logs</CardTitle>
+                <CardDescription className="text-slate-500">
+                  Monitor system events, errors, and warnings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-lg border border-blue-100 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50 hover:bg-blue-50">
+                        <TableHead className="text-slate-600">Timestamp</TableHead>
+                        <TableHead className="text-slate-600">Level</TableHead>
+                        <TableHead className="text-slate-600">Source</TableHead>
+                        <TableHead className="text-slate-600">Message</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {systemLogs.map((log) => (
+                        <TableRow key={log.id} className="border-blue-50 hover:bg-blue-50/50">
+                          <TableCell className="text-slate-500">
+                            {new Date(log.created_at).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getLogLevelColor(log.log_level)}>
+                              {log.log_level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-slate-600">{log.source}</TableCell>
+                          <TableCell className="text-slate-700 max-w-md truncate">{log.message}</TableCell>
+                        </TableRow>
+                      ))}
+                      {systemLogs.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-slate-400 py-8">
+                            No system logs found
                           </TableCell>
                         </TableRow>
                       )}
