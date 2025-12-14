@@ -31,6 +31,7 @@ import {
   Download
 } from 'lucide-react';
 import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
+import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
 
 interface AuditLog {
   id: string;
@@ -598,6 +599,10 @@ const SuperAdmin = () => {
               <AlertTriangle className="h-4 w-4 mr-2" />
               System Logs
             </TabsTrigger>
+            <TabsTrigger value="config" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <Settings className="h-4 w-4 mr-2" />
+              Configuration
+            </TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
@@ -864,6 +869,15 @@ const SuperAdmin = () => {
                     </TableBody>
                   </Table>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Configuration Tab */}
+          <TabsContent value="config">
+            <Card className="bg-white border-blue-100 shadow-sm">
+              <CardContent className="p-6">
+                <SystemConfigPanel />
               </CardContent>
             </Card>
           </TabsContent>
