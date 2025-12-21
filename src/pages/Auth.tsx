@@ -12,16 +12,19 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 
 const signUpSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  username: z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be less than 20 characters').regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   firstname: z.string().min(2, 'First name must be at least 2 characters'),
   lastname: z.string().min(2, 'Last name must be at least 2 characters'),
 });
 
 const signInSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
 });
+
+// Convert username to email format for Supabase auth
+const usernameToEmail = (username: string) => `${username.toLowerCase()}@cbt.local`;
 
 interface AdminProfile {
   id: string;
@@ -32,16 +35,14 @@ interface AdminProfile {
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [selectedAdminId, setSelectedAdminId] = useState<string>('');
   const [admins, setAdmins] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -76,14 +77,15 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const validated = signInSchema.parse({ email, password });
-        const { error } = await signIn(validated.email, validated.password);
+        const validated = signInSchema.parse({ username, password });
+        const email = usernameToEmail(validated.username);
+        const { error } = await signIn(email, validated.password);
         
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             toast({
               title: 'Login Failed',
-              description: 'Invalid email or password. Please try again.',
+              description: 'Invalid username or password. Please try again.',
               variant: 'destructive',
             });
           } else {
@@ -101,14 +103,15 @@ const Auth = () => {
           navigate('/dashboard');
         }
       } else {
-        const validated = signUpSchema.parse({ email, password, firstname, lastname });
-        const { error, data } = await signUp(validated.email, validated.password, validated.firstname, validated.lastname);
+        const validated = signUpSchema.parse({ username, password, firstname, lastname });
+        const email = usernameToEmail(validated.username);
+        const { error, data } = await signUp(email, validated.password, validated.firstname, validated.lastname);
         
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
               title: 'Registration Failed',
-              description: 'An account with this email already exists.',
+              description: 'This username is already taken.',
               variant: 'destructive',
             });
           } else {
@@ -119,11 +122,15 @@ const Auth = () => {
             });
           }
         } else {
-          // Update the profile with selected admin if one was chosen
-          if (selectedAdminId && data?.user) {
+          // Update the profile with selected admin and username
+          if (data?.user) {
+            const updates: any = { username: validated.username };
+            if (selectedAdminId) {
+              updates.assigned_admin_id = selectedAdminId;
+            }
             await supabase
               .from('profiles')
-              .update({ assigned_admin_id: selectedAdminId })
+              .update(updates)
               .eq('id', data.user.id);
           }
           
@@ -147,81 +154,6 @@ const Auth = () => {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (!resetEmail) {
-      toast({
-        title: 'Error',
-        description: 'Please enter your email address',
-        variant: 'destructive',
-      });
-      setLoading(false);
-      return;
-    }
-
-    const { error } = await resetPassword(resetEmail);
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Password reset email sent! Check your inbox.',
-      });
-      setShowForgotPassword(false);
-      setResetEmail('');
-    }
-
-    setLoading(false);
-  };
-
-  if (showForgotPassword) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl">Reset Password</CardTitle>
-            <CardDescription>
-              Enter your email and we'll send you a reset link
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="reset-email">Email</Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Sending...' : 'Send Reset Link'}
-              </Button>
-              <Button
-                type="button"
-                variant="link"
-                className="w-full"
-                onClick={() => setShowForgotPassword(false)}
-              >
-                Back to Login
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
       <Card className="w-full max-w-md">
@@ -240,13 +172,13 @@ const Auth = () => {
             <TabsContent value="login">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-username">Username</Label>
                   <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="login-username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </div>
@@ -262,14 +194,6 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="w-full text-sm"
-                  onClick={() => setShowForgotPassword(true)}
-                >
-                  Forgot password?
                 </Button>
               </form>
             </TabsContent>
@@ -300,13 +224,13 @@ const Auth = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-username">Username</Label>
                   <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="signup-username"
+                    type="text"
+                    placeholder="Choose a username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </div>
