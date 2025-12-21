@@ -21,9 +21,9 @@ serve(async (req) => {
       );
     }
 
-    const GROK_API_KEY = Deno.env.get('GROK_API_KEY');
-    if (!GROK_API_KEY) {
-      throw new Error('GROK_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     const systemPrompt = `You are an expert test question generator. Generate multiple-choice questions based on the given topic and difficulty level. Each question should have exactly 4 options with only one correct answer. Return your response as valid JSON only.`;
@@ -50,32 +50,38 @@ Return ONLY a JSON object in this exact format, no other text:
 
 Where correct_answer is the index (0-3) of the correct option.`;
 
-    console.log('Calling Grok API for topic:', topic, 'difficulty:', difficulty, 'count:', count);
+    console.log('Calling Lovable AI for topic:', topic, 'difficulty:', difficulty, 'count:', count);
 
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROK_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-3-latest',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Grok API error:', response.status, errorText);
+      console.error('Lovable AI error:', response.status, errorText);
       
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'Payment required. Please add credits to your workspace.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
@@ -86,7 +92,7 @@ Where correct_answer is the index (0-3) of the correct option.`;
     }
 
     const data = await response.json();
-    console.log('Grok API response received');
+    console.log('Lovable AI response received');
     
     const content = data.choices?.[0]?.message?.content;
     if (!content) {
