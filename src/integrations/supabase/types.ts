@@ -44,6 +44,7 @@ export type Database = {
           id: string
           is_waiting: boolean | null
           lastname: string
+          username: string | null
         }
         Insert: {
           assigned_admin_id?: string | null
@@ -53,6 +54,7 @@ export type Database = {
           id: string
           is_waiting?: boolean | null
           lastname?: string
+          username?: string | null
         }
         Update: {
           assigned_admin_id?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           id?: string
           is_waiting?: boolean | null
           lastname?: string
+          username?: string | null
         }
         Relationships: [
           {
