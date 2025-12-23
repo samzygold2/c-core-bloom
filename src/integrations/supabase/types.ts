@@ -312,6 +312,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      score_test: {
+        Args: { p_test_session_id: string; p_user_answers: Json }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"

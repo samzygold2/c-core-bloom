@@ -1,10 +1,19 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const inputSchema = z.object({
+  topic: z.string().min(3, 'Topic must be at least 3 characters').max(200, 'Topic must be 200 characters or less'),
+  difficulty: z.enum(['easy', 'medium', 'hard'], { errorMap: () => ({ message: 'Difficulty must be easy, medium, or hard' }) }),
+  count: z.number().int().min(1).max(20).optional().default(5)
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,14 +21,65 @@ serve(async (req) => {
   }
 
   try {
-    const { topic, difficulty, count = 5 } = await req.json();
-    
-    if (!topic || !difficulty) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Missing authorization header');
       return new Response(
-        JSON.stringify({ error: 'Topic and difficulty are required' }),
+        JSON.stringify({ error: 'Missing authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's auth token to verify identity
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify caller has admin or super_admin role
+    const { data: roleData } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .in('role', ['admin', 'super_admin']);
+
+    if (!roleData || roleData.length === 0) {
+      console.error(`User ${user.id} attempted to generate questions without admin role`);
+      return new Response(
+        JSON.stringify({ error: 'Admin role required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse and validate input
+    let input;
+    try {
+      const body = await req.json();
+      input = inputSchema.parse(body);
+    } catch (validationError) {
+      console.error('Input validation failed:', validationError);
+      const errorMessage = validationError instanceof z.ZodError 
+        ? validationError.errors.map(e => e.message).join(', ')
+        : 'Invalid input';
+      return new Response(
+        JSON.stringify({ error: errorMessage }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { topic, difficulty, count } = input;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -50,7 +110,7 @@ Return ONLY a JSON object in this exact format, no other text:
 
 Where correct_answer is the index (0-3) of the correct option.`;
 
-    console.log('Calling Lovable AI for topic:', topic, 'difficulty:', difficulty, 'count:', count);
+    console.log(`Admin ${user.id} generating ${count} questions for topic: ${topic}, difficulty: ${difficulty}`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -114,7 +174,7 @@ Where correct_answer is the index (0-3) of the correct option.`;
       throw new Error('Failed to parse AI response as JSON');
     }
 
-    console.log('Generated', generatedQuestions.questions?.length || 0, 'questions');
+    console.log(`Generated ${generatedQuestions.questions?.length || 0} questions for admin ${user.id}`);
 
     return new Response(
       JSON.stringify({ questions: generatedQuestions.questions }),

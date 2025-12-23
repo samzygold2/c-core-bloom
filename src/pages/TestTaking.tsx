@@ -137,36 +137,27 @@ const TestTaking = () => {
   const handleSubmit = async () => {
     if (!userTestId) return;
 
-    // Fetch correct answers from server (admin-only access)
-    const { data: questionsWithAnswers } = await supabase
-      .from('questions')
-      .select('id, correct_answer')
-      .eq('test_id', testId);
+    try {
+      // Use secure server-side scoring function
+      const { data, error } = await supabase.rpc('score_test', {
+        p_test_session_id: userTestId,
+        p_user_answers: answers
+      });
 
-    let score = 0;
-    questionsWithAnswers?.forEach((q) => {
-      if (answers[q.id] === q.correct_answer) {
-        score++;
-      }
-    });
+      if (error) throw error;
 
-    const { error } = await supabase
-      .from('user_tests')
-      .update({
-        end_time: new Date().toISOString(),
-        score,
-        answers,
-      })
-      .eq('id', userTestId);
-
-    if (error) {
+      toast({
+        title: 'Success',
+        description: `Test submitted successfully!`,
+      });
+      
+      navigate(`/results/${userTestId}`);
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to submit test',
+        description: error?.message || 'Failed to submit test',
         variant: 'destructive',
       });
-    } else {
-      navigate(`/results/${userTestId}`);
     }
   };
 
