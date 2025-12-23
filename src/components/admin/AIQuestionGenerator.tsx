@@ -57,13 +57,14 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
         throw new Error('No questions generated');
       }
 
-      // Insert all generated questions
+      // Insert all generated questions as pending review
       const questionsToInsert = data.questions.map((q: GeneratedQuestion) => ({
         test_id: selectedTest,
         question_text: q.question_text,
         options: q.options,
         correct_answer: q.correct_answer,
         difficulty: difficulty,
+        is_reviewed: false,
       }));
 
       const { error: insertError } = await supabase
@@ -82,7 +83,7 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
 
       toast({
         title: 'Success',
-        description: `Generated ${data.questions.length} questions successfully`,
+        description: `Generated ${data.questions.length} questions (pending review)`,
       });
 
       // Reset form
