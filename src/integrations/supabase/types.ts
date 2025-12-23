@@ -82,8 +82,11 @@ export type Database = {
           created_at: string | null
           difficulty: string | null
           id: string
+          is_reviewed: boolean | null
           options: Json
           question_text: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           test_id: string
         }
         Insert: {
@@ -91,8 +94,11 @@ export type Database = {
           created_at?: string | null
           difficulty?: string | null
           id?: string
+          is_reviewed?: boolean | null
           options: Json
           question_text: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           test_id: string
         }
         Update: {
@@ -100,8 +106,11 @@ export type Database = {
           created_at?: string | null
           difficulty?: string | null
           id?: string
+          is_reviewed?: boolean | null
           options?: Json
           question_text?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           test_id?: string
         }
         Relationships: [

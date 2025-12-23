@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Upload, Search, Filter, Edit, Save, X, CheckSquare, Square } from 'lucide-react';
+import { Plus, Trash2, Upload, Search, Filter, Edit, Save, X, CheckSquare, Square, CheckCircle, Clock } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AIQuestionGenerator } from './AIQuestionGenerator';
 
@@ -22,6 +22,9 @@ interface Question {
   options: string[];
   correct_answer: number;
   difficulty: string;
+  is_reviewed: boolean;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
   tests: { title: string };
 }
 
@@ -39,6 +42,7 @@ export const QuestionManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTest, setFilterTest] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [filterReviewStatus, setFilterReviewStatus] = useState('all');
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editQuestionText, setEditQuestionText] = useState('');
   const [editOptions, setEditOptions] = useState<string[]>([]);
@@ -66,6 +70,7 @@ export const QuestionManager = () => {
     const { data } = await supabase
       .from('questions')
       .select('*, tests(title)')
+      .order('is_reviewed', { ascending: true })
       .order('created_at', { ascending: false });
     
     if (data) setQuestions(data as any);
@@ -251,6 +256,7 @@ export const QuestionManager = () => {
           options: q.options,
           correct_answer: q.correct_answer,
           difficulty: q.difficulty || 'medium',
+          is_reviewed: false,
         })));
 
       if (error) {
@@ -262,7 +268,7 @@ export const QuestionManager = () => {
       } else {
         toast({
           title: 'Success',
-          description: `Imported ${validQuestions.length} questions successfully`,
+          description: `Imported ${validQuestions.length} questions (pending review)`,
         });
         
         await supabase.from('audit_log').insert({
@@ -363,14 +369,90 @@ export const QuestionManager = () => {
                           question.options.some(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesTest = filterTest === 'all' || question.tests.title === filterTest;
     const matchesDifficulty = filterDifficulty === 'all' || question.difficulty === filterDifficulty;
+    const matchesReviewStatus = filterReviewStatus === 'all' || 
+                                 (filterReviewStatus === 'pending' && !question.is_reviewed) ||
+                                 (filterReviewStatus === 'reviewed' && question.is_reviewed);
     
-    return matchesSearch && matchesTest && matchesDifficulty;
+    return matchesSearch && matchesTest && matchesDifficulty && matchesReviewStatus;
   });
+
+  const pendingCount = questions.filter(q => !q.is_reviewed).length;
 
   const clearFilters = () => {
     setSearchTerm('');
     setFilterTest('all');
     setFilterDifficulty('all');
+    setFilterReviewStatus('all');
+  };
+
+  const handleApproveQuestion = async (questionId: string) => {
+    const user = (await supabase.auth.getUser()).data.user;
+    
+    const { error } = await supabase
+      .from('questions')
+      .update({
+        is_reviewed: true,
+        reviewed_by: user?.id,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', questionId);
+
+    if (!error) {
+      toast({
+        title: 'Success',
+        description: 'Question approved successfully',
+      });
+      
+      await supabase.from('audit_log').insert({
+        admin_id: user?.id,
+        action: `Approved question`,
+      });
+      
+      fetchQuestions();
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to approve question',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleBatchApprove = async () => {
+    if (selectedQuestions.size === 0) return;
+    
+    const user = (await supabase.auth.getUser()).data.user;
+
+    const { error } = await supabase
+      .from('questions')
+      .update({
+        is_reviewed: true,
+        reviewed_by: user?.id,
+        reviewed_at: new Date().toISOString(),
+      })
+      .in('id', Array.from(selectedQuestions));
+
+    if (!error) {
+      toast({
+        title: 'Success',
+        description: `Approved ${selectedQuestions.size} questions successfully`,
+      });
+      
+      await supabase.from('audit_log').insert({
+        admin_id: user?.id,
+        action: `Batch approved ${selectedQuestions.size} questions`,
+      });
+      
+      setSelectedQuestions(new Set());
+      setSelectAll(false);
+      fetchQuestions();
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to approve questions',
+        variant: 'destructive',
+      });
+    }
   };
 
   const toggleSelectAll = () => {
@@ -577,7 +659,7 @@ export const QuestionManager = () => {
             />
           </div>
           
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div>
               <Label>Filter by Test</Label>
               <Select value={filterTest} onValueChange={setFilterTest}>
@@ -610,6 +692,20 @@ export const QuestionManager = () => {
               </Select>
             </div>
 
+            <div>
+              <Label>Filter by Review Status</Label>
+              <Select value={filterReviewStatus} onValueChange={setFilterReviewStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending Review ({pendingCount})</SelectItem>
+                  <SelectItem value="reviewed">Reviewed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-end">
               <Button 
                 variant="outline" 
@@ -620,6 +716,23 @@ export const QuestionManager = () => {
               </Button>
             </div>
           </div>
+
+          {pendingCount > 0 && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <Clock className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm text-yellow-700 dark:text-yellow-400">
+                {pendingCount} question{pendingCount !== 1 ? 's' : ''} pending review
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-auto"
+                onClick={() => setFilterReviewStatus('pending')}
+              >
+                View Pending
+              </Button>
+            </div>
+          )}
 
           <div className="text-sm text-muted-foreground">
             Showing {filteredQuestions.length} of {questions.length} questions
@@ -652,8 +765,16 @@ export const QuestionManager = () => {
               </div>
 
               {selectedQuestions.size > 0 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Label className="text-sm">Batch Actions:</Label>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleBatchApprove}
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Approve Selected
+                  </Button>
                   <Select onValueChange={handleBatchUpdateDifficulty}>
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Set Difficulty" />
@@ -764,8 +885,22 @@ export const QuestionManager = () => {
                     </Button>
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      {question.tests.title}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <span>{question.tests.title}</span>
+                      <span>•</span>
+                      <span className="capitalize">{question.difficulty}</span>
+                      <span>•</span>
+                      {question.is_reviewed ? (
+                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <CheckCircle className="h-3 w-3" />
+                          Reviewed
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+                          <Clock className="h-3 w-3" />
+                          Pending Review
+                        </span>
+                      )}
                     </div>
                     <CardTitle className="text-lg">{question.question_text}</CardTitle>
                     <div className="mt-2 space-y-1">
@@ -784,6 +919,16 @@ export const QuestionManager = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    {!question.is_reviewed && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleApproveQuestion(question.id)}
+                        title="Approve question"
+                      >
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="icon"
