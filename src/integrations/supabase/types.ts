@@ -140,6 +140,7 @@ export type Database = {
         Row: {
           correct_answer: number
           created_at: string | null
+          created_by: string | null
           difficulty: string | null
           id: string
           is_reviewed: boolean | null
@@ -152,6 +153,7 @@ export type Database = {
         Insert: {
           correct_answer: number
           created_at?: string | null
+          created_by?: string | null
           difficulty?: string | null
           id?: string
           is_reviewed?: boolean | null
@@ -164,6 +166,7 @@ export type Database = {
         Update: {
           correct_answer?: number
           created_at?: string | null
+          created_by?: string | null
           difficulty?: string | null
           id?: string
           is_reviewed?: boolean | null
