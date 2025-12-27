@@ -12,7 +12,7 @@ const corsHeaders = {
 const inputSchema = z.object({
   topic: z.string().min(3, 'Topic must be at least 3 characters').max(200, 'Topic must be 200 characters or less'),
   difficulty: z.enum(['easy', 'medium', 'hard'], { errorMap: () => ({ message: 'Difficulty must be easy, medium, or hard' }) }),
-  count: z.number().int().min(1).max(20).optional().default(5)
+  count: z.number().int().min(1).max(100).optional().default(5)
 });
 
 serve(async (req) => {
