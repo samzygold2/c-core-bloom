@@ -27,7 +27,7 @@ serve(async (req) => {
         
         if (!username || !role) {
           return new Response(
-            JSON.stringify({ error: 'Username and role are required' }),
+            JSON.stringify({ error: 'Username/email and role are required' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -39,10 +39,14 @@ serve(async (req) => {
           );
         }
 
+        // For admins, username is actually an email address
+        // For users, username will be converted to email format
+        const identifier = role === 'admin' ? username : username;
+
         // Create a password reset request
         const { error: insertError } = await supabaseAdmin
           .from('password_reset_requests')
-          .insert({ username, role, status: 'pending' });
+          .insert({ username: identifier, role, status: 'pending' });
 
         if (insertError) {
           console.error('[reset-password] Insert error:', insertError);
@@ -52,7 +56,7 @@ serve(async (req) => {
           );
         }
 
-        console.log(`[reset-password] Reset request created for ${username} (${role})`);
+        console.log(`[reset-password] Reset request created for ${identifier} (${role})`);
         return new Response(
           JSON.stringify({ 
             message: `Password reset request sent. A ${role === 'user' ? 'Admin' : 'Super Admin'} will generate an OTP for you.` 
@@ -151,7 +155,7 @@ serve(async (req) => {
         
         if (!username || !otp || !new_password) {
           return new Response(
-            JSON.stringify({ error: 'Username, OTP, and new password are required' }),
+            JSON.stringify({ error: 'Username/email, OTP, and new password are required' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -163,8 +167,14 @@ serve(async (req) => {
           );
         }
 
-        // Find user by username (email format used in this app)
-        const email = `${username.toLowerCase()}@cbt.local`;
+        // Determine if input is an email or username
+        const isEmail = username.includes('@') && !username.endsWith('@cbt.local');
+        
+        // For admins: use email directly, for users: convert username to email format
+        const email = isEmail ? username.toLowerCase() : `${username.toLowerCase()}@cbt.local`;
+        
+        console.log(`[reset-password] Looking up user with email: ${email}`);
+        
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
         
         if (userError) {
@@ -177,6 +187,7 @@ serve(async (req) => {
 
         const targetUser = userData.users.find(u => u.email === email);
         if (!targetUser) {
+          console.log(`[reset-password] User not found for email: ${email}`);
           return new Response(
             JSON.stringify({ error: 'User not found' }),
             { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
