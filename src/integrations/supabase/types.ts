@@ -131,6 +131,13 @@ export type Database = {
             foreignKeyName: "profiles_assigned_admin_id_fkey"
             columns: ["assigned_admin_id"]
             isOneToOne: false
+            referencedRelation: "admin_profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_assigned_admin_id_fkey"
+            columns: ["assigned_admin_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -331,6 +338,14 @@ export type Database = {
       }
     }
     Views: {
+      admin_profiles_public: {
+        Row: {
+          firstname: string | null
+          id: string | null
+          lastname: string | null
+        }
+        Relationships: []
+      }
       user_questions: {
         Row: {
           created_at: string | null
