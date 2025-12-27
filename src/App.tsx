@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminLogin from "./pages/AdminLogin";
 import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import TestTaking from "./pages/TestTaking";
 import Results from "./pages/Results";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/super-admin-login" element={<SuperAdminLogin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/test/:testId" element={<TestTaking />} />
             <Route path="/results" element={<Results />} />

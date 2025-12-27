@@ -35,6 +35,66 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_otps: {
+        Row: {
+          created_at: string
+          expires_at: string
+          generated_by: string
+          id: string
+          otp_hash: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          generated_by: string
+          id?: string
+          otp_hash: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          generated_by?: string
+          id?: string
+          otp_hash?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      password_reset_requests: {
+        Row: {
+          created_at: string
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          role: string
+          status: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          role: string
+          status?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          role?: string
+          status?: string
+          username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           assigned_admin_id: string | null
@@ -305,6 +365,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_otps: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -314,6 +375,10 @@ export type Database = {
       }
       score_test: {
         Args: { p_test_session_id: string; p_user_answers: Json }
+        Returns: Json
+      }
+      validate_otp: {
+        Args: { p_otp: string; p_username: string }
         Returns: Json
       }
     }

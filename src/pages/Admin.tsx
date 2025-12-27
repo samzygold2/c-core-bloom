@@ -5,11 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, Clock, KeyRound } from 'lucide-react';
 import { TestManager } from '@/components/admin/TestManager';
 import { QuestionManager } from '@/components/admin/QuestionManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { AssignedUsersManager } from '@/components/admin/AssignedUsersManager';
+import PasswordResetManager from '@/components/admin/PasswordResetManager';
 
 interface AdminStats {
   assignedUsers: number;
@@ -175,6 +176,10 @@ const Admin = () => {
               <BarChart3 className="h-4 w-4" />
               My Analytics
             </TabsTrigger>
+            <TabsTrigger value="password-reset" className="gap-2">
+              <KeyRound className="h-4 w-4" />
+              Password Reset
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="my-users">
@@ -191,6 +196,10 @@ const Admin = () => {
 
           <TabsContent value="analytics">
             <AnalyticsDashboard />
+          </TabsContent>
+
+          <TabsContent value="password-reset">
+            <PasswordResetManager />
           </TabsContent>
         </Tabs>
       </main>
