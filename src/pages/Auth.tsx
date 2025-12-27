@@ -30,7 +30,6 @@ interface AdminProfile {
   id: string;
   firstname: string;
   lastname: string;
-  email: string;
 }
 
 const Auth = () => {
@@ -51,20 +50,10 @@ const Auth = () => {
   }, []);
 
   const fetchAdmins = async () => {
-    // Get all admin user IDs
-    const { data: adminRoles } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'admin');
-
-    if (!adminRoles || adminRoles.length === 0) return;
-
-    // Get profiles of admins
-    const adminIds = adminRoles.map(r => r.user_id);
+    // Use secure view that only exposes non-sensitive admin info
     const { data: adminProfiles } = await supabase
-      .from('profiles')
-      .select('id, firstname, lastname, email')
-      .in('id', adminIds);
+      .from('admin_profiles_public')
+      .select('id, firstname, lastname');
 
     if (adminProfiles) {
       setAdmins(adminProfiles);
