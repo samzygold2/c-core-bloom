@@ -17,20 +17,23 @@ interface Test {
 }
 
 const Dashboard = () => {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut, loading: authLoading } = useAuth();
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Wait for auth to finish loading before redirecting
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
     }
     
     fetchTests();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const fetchTests = async () => {
     const { data, error } = await supabase

@@ -18,19 +18,22 @@ interface UserTest {
 
 const ResultDetail = () => {
   const { resultId } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [result, setResult] = useState<UserTest | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wait for auth to finish loading before redirecting
+    if (authLoading) return;
+    
     if (!user || !resultId) {
       navigate('/auth');
       return;
     }
     
     fetchResult();
-  }, [user, resultId, navigate]);
+  }, [user, resultId, authLoading, navigate]);
 
   const fetchResult = async () => {
     const { data, error } = await supabase

@@ -20,7 +20,7 @@ interface AdminStats {
 }
 
 const Admin = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats>({
     assignedUsers: 0,
@@ -30,6 +30,9 @@ const Admin = () => {
   });
 
   useEffect(() => {
+    // Wait for auth to finish loading before redirecting
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
@@ -38,7 +41,7 @@ const Admin = () => {
     if (!isAdmin) {
       navigate('/dashboard');
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, authLoading, navigate]);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -81,8 +84,12 @@ const Admin = () => {
     });
   };
 
-  if (!isAdmin) {
-    return null;
+  if (authLoading || !isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
