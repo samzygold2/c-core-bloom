@@ -58,10 +58,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
-      .eq('role', 'admin')
-      .single();
+      .in('role', ['admin', 'super_admin']);
     
-    setIsAdmin(!!data);
+    setIsAdmin(data && data.length > 0);
   };
 
   const signUp = async (email: string, password: string, firstname: string, lastname: string) => {

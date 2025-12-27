@@ -31,7 +31,7 @@ interface Test {
 
 const TestTaking = () => {
   const { testId } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -43,13 +43,16 @@ const TestTaking = () => {
   const [userTestId, setUserTestId] = useState<string>('');
 
   useEffect(() => {
+    // Wait for auth to finish loading before redirecting
+    if (authLoading) return;
+    
     if (!user || !testId) {
       navigate('/auth');
       return;
     }
     
     initializeTest();
-  }, [user, testId, navigate]);
+  }, [user, testId, authLoading, navigate]);
 
   const initializeTest = async () => {
     const { data: testData, error: testError } = await supabase
