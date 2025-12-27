@@ -11,14 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, KeyRound, Send, Lock } from 'lucide-react';
 import { z } from 'zod';
 
-const userRequestSchema = z.object({
+const requestSchema = z.object({
   username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
-  role: z.literal('user'),
-});
-
-const adminRequestSchema = z.object({
-  email: z.string().email('Please enter a valid email address').max(255, 'Email too long'),
-  role: z.literal('admin'),
+  role: z.enum(['user', 'admin'], { required_error: 'Please select your role' }),
 });
 
 const resetSchema = z.object({
@@ -36,7 +31,6 @@ const ForgotPassword = () => {
   
   // Request OTP state
   const [requestUsername, setRequestUsername] = useState('');
-  const [requestEmail, setRequestEmail] = useState('');
   const [requestRole, setRequestRole] = useState<'user' | 'admin'>('user');
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestError, setRequestError] = useState('');
@@ -60,27 +54,16 @@ const ForgotPassword = () => {
     setRequestLoading(true);
 
     try {
-      let identifier: string;
-      
-      if (requestRole === 'admin') {
-        const validated = adminRequestSchema.parse({
-          email: requestEmail,
-          role: requestRole,
-        });
-        identifier = validated.email;
-      } else {
-        const validated = userRequestSchema.parse({
-          username: requestUsername,
-          role: requestRole,
-        });
-        identifier = validated.username;
-      }
+      const validated = requestSchema.parse({
+        username: requestUsername,
+        role: requestRole,
+      });
 
       const { data, error } = await supabase.functions.invoke('reset-password', {
         body: {
           action: 'request_otp',
-          username: identifier,
-          role: requestRole,
+          username: validated.username,
+          role: validated.role,
         },
       });
 
@@ -88,7 +71,7 @@ const ForgotPassword = () => {
       if (data?.error) throw new Error(data.error);
 
       setRequestSuccess(data.message || 'Request submitted successfully. Please wait for an admin to generate your OTP.');
-      setResetUsername(identifier);
+      setResetUsername(validated.username);
     } catch (error) {
       if (error instanceof z.ZodError) {
         setRequestError(error.errors[0].message);
@@ -179,33 +162,18 @@ const ForgotPassword = () => {
                   </Alert>
                 )}
 
-                {requestRole === 'user' ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="request-username">Username</Label>
-                    <Input
-                      id="request-username"
-                      type="text"
-                      placeholder="Enter your username"
-                      value={requestUsername}
-                      onChange={(e) => setRequestUsername(e.target.value)}
-                      disabled={requestLoading}
-                      maxLength={50}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label htmlFor="request-email">Email</Label>
-                    <Input
-                      id="request-email"
-                      type="email"
-                      placeholder="Enter your email address"
-                      value={requestEmail}
-                      onChange={(e) => setRequestEmail(e.target.value)}
-                      disabled={requestLoading}
-                      maxLength={255}
-                    />
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="request-username">Username</Label>
+                  <Input
+                    id="request-username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={requestUsername}
+                    onChange={(e) => setRequestUsername(e.target.value)}
+                    disabled={requestLoading}
+                    maxLength={50}
+                  />
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="request-role">Your Role</Label>
