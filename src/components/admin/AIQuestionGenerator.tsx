@@ -60,6 +60,12 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
         throw new Error('No questions generated');
       }
 
+      // Get current user ID for created_by field (required by RLS)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Insert all generated questions as pending review
       const questionsToInsert = data.questions.map((q: GeneratedQuestion) => ({
         test_id: selectedTest,
@@ -68,6 +74,7 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
         correct_answer: q.correct_answer,
         difficulty: difficulty,
         is_reviewed: false,
+        created_by: user.id,
       }));
 
       const { error: insertError } = await supabase
