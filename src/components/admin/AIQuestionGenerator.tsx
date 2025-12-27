@@ -44,9 +44,12 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
 
     setGenerating(true);
 
+    // Ensure count is within valid range
+    const validCount = Math.min(count, 20);
+
     try {
       const { data, error } = await supabase.functions.invoke('generate-questions', {
-        body: { topic, difficulty, count }
+        body: { topic, difficulty, count: validCount }
       });
 
       if (error) {
