@@ -45,7 +45,7 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
     setGenerating(true);
 
     // Ensure count is within valid range
-    const validCount = Math.min(count, 20);
+    const validCount = Math.min(count, 100);
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-questions', {
@@ -172,6 +172,12 @@ export const AIQuestionGenerator = ({ tests, onQuestionsGenerated }: AIQuestionG
                 <SelectItem value="10">10 questions</SelectItem>
                 <SelectItem value="15">15 questions</SelectItem>
                 <SelectItem value="20">20 questions</SelectItem>
+                <SelectItem value="30">30 questions</SelectItem>
+                <SelectItem value="40">40 questions</SelectItem>
+                <SelectItem value="50">50 questions</SelectItem>
+                <SelectItem value="60">60 questions</SelectItem>
+                <SelectItem value="80">80 questions</SelectItem>
+                <SelectItem value="100">100 questions</SelectItem>
               </SelectContent>
             </Select>
           </div>
