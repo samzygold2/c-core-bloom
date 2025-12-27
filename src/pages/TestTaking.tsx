@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { TestTimer } from '@/components/TestTimer';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 interface Question {
   id: string;
@@ -180,6 +181,9 @@ const TestTaking = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
       <div className="container mx-auto max-w-4xl">
+        <div className="mb-4">
+          <BackButton to="/dashboard" label="Exit Test" />
+        </div>
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">{test?.title}</h1>
