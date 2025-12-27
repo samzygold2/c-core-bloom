@@ -48,12 +48,15 @@ export const TestManager = () => {
       return;
     }
 
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    
     const { error } = await supabase
       .from('tests')
       .insert({
         title,
         duration_minutes: duration,
         is_active: true,
+        created_by: userId,
       });
 
     if (error) {
