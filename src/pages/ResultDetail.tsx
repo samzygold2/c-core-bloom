@@ -35,6 +35,15 @@ const ResultDetail = () => {
     fetchResult();
   }, [user, resultId, authLoading, navigate]);
 
+  // Show loading spinner while auth is loading
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   const fetchResult = async () => {
     const { data, error } = await supabase
       .from('user_tests')
