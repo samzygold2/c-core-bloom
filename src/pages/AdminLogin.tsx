@@ -43,16 +43,19 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const { signIn, signUpAdmin, user, isAdmin, resetPassword } = useAuth();
+  const { signIn, signUpAdmin, user, isAdmin, resetPassword, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking user
+    if (authLoading) return;
+    
     if (user && isAdmin) {
       navigate('/admin');
     } else if (user && !isAdmin) {
       setError('Access denied. Admin privileges required.');
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, authLoading, navigate]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

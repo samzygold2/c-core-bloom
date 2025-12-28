@@ -109,9 +109,10 @@ const SuperAdmin = () => {
   }, []);
 
   const checkSuperAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    // First wait for any session to be restored
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!user) {
+    if (!session?.user) {
       navigate('/super-admin-login');
       return;
     }
@@ -119,7 +120,7 @@ const SuperAdmin = () => {
     const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .eq('role', 'super_admin')
       .single();
 
