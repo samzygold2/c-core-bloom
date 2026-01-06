@@ -161,27 +161,27 @@ const Auth = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-      <div className="absolute top-4 left-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-3 sm:p-4">
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
         <BackButton to="/" label="Home" />
       </div>
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">CBT Platform</CardTitle>
-          <CardDescription>
+      <Card className="w-full max-w-md mt-12 sm:mt-0">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-xl sm:text-2xl">CBT Platform</CardTitle>
+          <CardDescription className="text-sm">
             {isLogin ? 'Sign in to take tests' : 'Create an account to get started'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
           <Tabs value={isLogin ? 'login' : 'signup'} onValueChange={(v) => setIsLogin(v === 'login')}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login" className="text-sm">Login</TabsTrigger>
+              <TabsTrigger value="signup" className="text-sm">Sign Up</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-username">Username</Label>
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="login-username" className="text-sm">Username</Label>
                   <Input
                     id="login-username"
                     type="text"
@@ -189,16 +189,18 @@ const Auth = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                    className="h-9 sm:h-10"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="login-password" className="text-sm">Password</Label>
                   <Input
                     id="login-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="h-9 sm:h-10"
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -209,7 +211,7 @@ const Auth = () => {
                     type="button"
                     variant="link"
                     onClick={() => navigate('/forgot-password')}
-                    className="text-sm"
+                    className="text-xs sm:text-sm"
                   >
                     Forgot Password?
                   </Button>
@@ -217,10 +219,10 @@ const Auth = () => {
               </form>
             </TabsContent>
             <TabsContent value="signup">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-firstname">First Name</Label>
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label htmlFor="signup-firstname" className="text-sm">First Name</Label>
                     <Input
                       id="signup-firstname"
                       type="text"
@@ -228,10 +230,11 @@ const Auth = () => {
                       value={firstname}
                       onChange={(e) => setFirstname(e.target.value)}
                       required
+                      className="h-9 sm:h-10"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-lastname">Last Name</Label>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label htmlFor="signup-lastname" className="text-sm">Last Name</Label>
                     <Input
                       id="signup-lastname"
                       type="text"
@@ -239,11 +242,12 @@ const Auth = () => {
                       value={lastname}
                       onChange={(e) => setLastname(e.target.value)}
                       required
+                      className="h-9 sm:h-10"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="signup-username" className="text-sm">Username</Label>
                   <Input
                     id="signup-username"
                     type="text"
@@ -251,26 +255,28 @@ const Auth = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                    className="h-9 sm:h-10"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="signup-password" className="text-sm">Password</Label>
                   <Input
                     id="signup-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="h-9 sm:h-10"
                   />
                 </div>
                 {admins.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-admin">Select Your Admin (Optional)</Label>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <Label htmlFor="signup-admin" className="text-sm">Select Your Admin (Optional)</Label>
                     <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose an admin to be assigned to" />
+                      <SelectTrigger className="h-9 sm:h-10">
+                        <SelectValue placeholder="Choose an admin" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background z-50">
                         {admins.map((admin) => (
                           <SelectItem key={admin.id} value={admin.id}>
                             {admin.firstname} {admin.lastname}
@@ -278,7 +284,7 @@ const Auth = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
                       Selecting an admin helps them track your progress
                     </p>
                   </div>

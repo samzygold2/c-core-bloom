@@ -69,38 +69,43 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center justify-between p-4">
-          <div>
-            <h1 className="text-2xl font-bold">CBT Platform</h1>
-            <p className="text-sm text-muted-foreground">Welcome, {user?.email}</p>
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold">CBT Platform</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate max-w-[200px] sm:max-w-none">
+              Welcome, {user?.email}
+            </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {isAdmin && (
-              <Button variant="outline" onClick={() => navigate('/admin')}>
-                <Shield className="mr-2 h-4 w-4" />
-                Admin Panel
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/admin')}>
+                <Shield className="mr-1 sm:mr-2 h-4 w-4" />
+                <span className="hidden xs:inline">Admin</span>
+                <span className="xs:hidden">Admin</span>
               </Button>
             )}
-            <Button variant="outline" onClick={() => navigate('/results')}>
-              My Results
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/results')}>
+              <span className="hidden sm:inline">My Results</span>
+              <span className="sm:hidden">Results</span>
             </Button>
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={signOut}>
+              <LogOut className="mr-1 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Logout</span>
+              <span className="sm:hidden">Exit</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto p-6">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold">Available Tests</h2>
-          <p className="text-muted-foreground">Select a test to begin</p>
+      <main className="container mx-auto p-4 sm:p-6">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold">Available Tests</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Select a test to begin</p>
         </div>
 
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader className="h-32 bg-muted" />
@@ -115,18 +120,18 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {tests.map((test) => (
               <Card key={test.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle>{test.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-4">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg sm:text-xl">{test.title}</CardTitle>
+                  <CardDescription className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                     <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {test.duration_minutes} minutes
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                      {test.duration_minutes} min
                     </span>
                     <span className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" />
+                      <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
                       {test.total_questions} questions
                     </span>
                   </CardDescription>
