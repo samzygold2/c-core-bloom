@@ -20,7 +20,7 @@ interface AdminStats {
 }
 
 const Admin = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading, adminLoading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats>({
     assignedUsers: 0,
@@ -30,8 +30,8 @@ const Admin = () => {
   });
 
   useEffect(() => {
-    // Wait for auth to finish loading before redirecting
-    if (authLoading) return;
+    // Wait for both auth and admin role check to finish before redirecting
+    if (authLoading || adminLoading) return;
     
     if (!user) {
       navigate('/auth');
@@ -41,7 +41,7 @@ const Admin = () => {
     if (!isAdmin) {
       navigate('/dashboard');
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, adminLoading, navigate]);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -84,7 +84,7 @@ const Admin = () => {
     });
   };
 
-  if (authLoading || !isAdmin) {
+  if (authLoading || adminLoading || !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
