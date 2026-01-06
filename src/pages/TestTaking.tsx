@@ -191,63 +191,69 @@ const TestTaking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-3 sm:p-4">
       <div className="container mx-auto max-w-4xl">
-        <div className="mb-4">
+        <div className="mb-3 sm:mb-4">
           <BackButton to="/dashboard" label="Exit Test" />
         </div>
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{test?.title}</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-lg sm:text-2xl font-bold">{test?.title}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Question {currentQuestionIndex + 1} of {questions.length}
             </p>
           </div>
           {test && <TestTimer durationMinutes={test.duration_minutes} onTimeUp={handleSubmit} />}
         </div>
 
-        <Progress value={progress} className="mb-6" />
+        <Progress value={progress} className="mb-4 sm:mb-6" />
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">{currentQuestion?.question_text}</CardTitle>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-xl leading-relaxed">{currentQuestion?.question_text}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
             <RadioGroup
               value={answers[currentQuestion?.id]?.toString() || ''}
               onValueChange={(value) => handleAnswerSelect(currentQuestion.id, parseInt(value))}
             >
               {currentQuestion?.shuffledOptions.map((option, displayIndex) => (
-                <div key={displayIndex} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent transition-colors">
-                  <RadioGroupItem value={option.originalIndex.toString()} id={`option-${displayIndex}`} />
-                  <Label htmlFor={`option-${displayIndex}`} className="flex-1 cursor-pointer">
+                <div key={displayIndex} className="flex items-start space-x-2 sm:space-x-3 rounded-lg border p-3 sm:p-4 hover:bg-accent transition-colors">
+                  <RadioGroupItem value={option.originalIndex.toString()} id={`option-${displayIndex}`} className="mt-0.5" />
+                  <Label htmlFor={`option-${displayIndex}`} className="flex-1 cursor-pointer text-sm sm:text-base leading-relaxed">
                     {option.text}
                   </Label>
                 </div>
               ))}
             </RadioGroup>
 
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between pt-3 sm:pt-4 gap-2">
               <Button
                 variant="outline"
+                size="sm"
+                className="sm:h-10 sm:px-4"
                 onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
                 disabled={!canGoPrev}
               >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
+                <ChevronLeft className="mr-1 sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
               </Button>
 
               {canGoNext ? (
                 <Button
+                  size="sm"
+                  className="sm:h-10 sm:px-4"
                   onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
                 >
                   Next
-                  <ChevronRight className="ml-2 h-4 w-4" />
+                  <ChevronRight className="ml-1 sm:ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button onClick={handleSubmit}>
-                  Submit Test
-                  <Send className="ml-2 h-4 w-4" />
+                <Button size="sm" className="sm:h-10 sm:px-4" onClick={handleSubmit}>
+                  <span className="hidden sm:inline">Submit Test</span>
+                  <span className="sm:hidden">Submit</span>
+                  <Send className="ml-1 sm:ml-2 h-4 w-4" />
                 </Button>
               )}
             </div>
