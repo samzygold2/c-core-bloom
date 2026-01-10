@@ -123,7 +123,14 @@ const Auth = () => {
           if (data?.user) {
             const updates: any = { username: validated.username };
             if (selectedAdminId) {
+              // User selected an admin - set as pending approval
               updates.assigned_admin_id = selectedAdminId;
+              updates.is_pending = true;
+              updates.is_waiting = false;
+            } else {
+              // No admin selected - go straight to waiting list
+              updates.is_waiting = true;
+              updates.is_pending = false;
             }
             await supabase
               .from('profiles')
@@ -133,7 +140,9 @@ const Auth = () => {
           
           toast({
             title: 'Success',
-            description: 'Account created successfully! You can now login.',
+            description: selectedAdminId 
+              ? 'Account created! Waiting for admin approval.' 
+              : 'Account created! You are on the waiting list for admin assignment.',
           });
           setIsLogin(true);
         }
@@ -271,7 +280,7 @@ const Auth = () => {
                 </div>
                 {admins.length > 0 && (
                   <div className="space-y-1.5 sm:space-y-2">
-                    <Label htmlFor="signup-admin" className="text-sm">Select Your Admin (Optional)</Label>
+                    <Label htmlFor="signup-admin" className="text-sm">Select Your Admin</Label>
                     <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
                       <SelectTrigger className="h-9 sm:h-10">
                         <SelectValue placeholder="Choose an admin" />
@@ -285,7 +294,7 @@ const Auth = () => {
                       </SelectContent>
                     </Select>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      Selecting an admin helps them track your progress
+                      Select an admin to request assignment. They will need to approve your request.
                     </p>
                   </div>
                 )}
