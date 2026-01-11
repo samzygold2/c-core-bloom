@@ -100,6 +100,17 @@ const Auth = () => {
           navigate('/dashboard');
         }
       } else {
+        // Validate admin selection is required
+        if (!selectedAdminId) {
+          toast({
+            title: 'Admin Required',
+            description: 'Please select an admin to continue with sign up.',
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+
         const validated = signUpSchema.parse({ username, password, firstname, lastname });
         const email = usernameToEmail(validated.username);
         const { error, data } = await signUp(email, validated.password, validated.firstname, validated.lastname);
@@ -121,28 +132,20 @@ const Auth = () => {
         } else {
           // Update the profile with selected admin and username
           if (data?.user) {
-            const updates: any = { username: validated.username };
-            if (selectedAdminId) {
-              // User selected an admin - set as pending approval
-              updates.assigned_admin_id = selectedAdminId;
-              updates.is_pending = true;
-              updates.is_waiting = false;
-            } else {
-              // No admin selected - go straight to waiting list
-              updates.is_waiting = true;
-              updates.is_pending = false;
-            }
             await supabase
               .from('profiles')
-              .update(updates)
+              .update({
+                username: validated.username,
+                assigned_admin_id: selectedAdminId,
+                is_pending: true,
+                is_waiting: false,
+              })
               .eq('id', data.user.id);
           }
           
           toast({
             title: 'Success',
-            description: selectedAdminId 
-              ? 'Account created! Waiting for admin approval.' 
-              : 'Account created! You are on the waiting list for admin assignment.',
+            description: 'Account created! Waiting for admin approval.',
           });
           setIsLogin(true);
         }
@@ -278,26 +281,32 @@ const Auth = () => {
                     className="h-9 sm:h-10"
                   />
                 </div>
-                {admins.length > 0 && (
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <Label htmlFor="signup-admin" className="text-sm">Select Your Admin</Label>
-                    <Select value={selectedAdminId} onValueChange={setSelectedAdminId}>
-                      <SelectTrigger className="h-9 sm:h-10">
-                        <SelectValue placeholder="Choose an admin" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background z-50">
-                        {admins.map((admin) => (
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="signup-admin" className="text-sm">
+                    Select Your Admin <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={selectedAdminId} onValueChange={setSelectedAdminId} required>
+                    <SelectTrigger className="h-9 sm:h-10">
+                      <SelectValue placeholder="Choose an admin (required)" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {admins.length > 0 ? (
+                        admins.map((admin) => (
                           <SelectItem key={admin.id} value={admin.id}>
                             {admin.firstname} {admin.lastname}
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      Select an admin to request assignment. They will need to approve your request.
-                    </p>
-                  </div>
-                )}
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          No admins available
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    You must select an admin. They will need to approve your request.
+                  </p>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Creating account...' : 'Sign Up'}
                 </Button>
