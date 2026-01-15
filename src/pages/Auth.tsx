@@ -64,7 +64,11 @@ const Auth = () => {
       .select('id, firstname, lastname');
 
     if (adminProfiles) {
-      setAdmins(adminProfiles);
+      // Filter out admins with empty names (not properly configured)
+      const validAdmins = adminProfiles.filter(
+        (admin) => admin.firstname?.trim() && admin.lastname?.trim()
+      );
+      setAdmins(validAdmins);
     }
   };
 
