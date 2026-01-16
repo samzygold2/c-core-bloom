@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
+import AdminPasswordResetManager from '@/components/admin/AdminPasswordResetManager';
 
 interface AuditLog {
   id: string;
@@ -604,6 +605,10 @@ const SuperAdmin = () => {
               <Settings className="h-4 w-4 mr-2" />
               Configuration
             </TabsTrigger>
+            <TabsTrigger value="admin-otp" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <KeyRound className="h-4 w-4 mr-2" />
+              Admin OTP
+            </TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
@@ -881,6 +886,11 @@ const SuperAdmin = () => {
                 <SystemConfigPanel />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Admin OTP Tab */}
+          <TabsContent value="admin-otp">
+            <AdminPasswordResetManager />
           </TabsContent>
         </Tabs>
       </main>
