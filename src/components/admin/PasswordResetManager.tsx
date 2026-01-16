@@ -45,11 +45,12 @@ const PasswordResetManager = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch pending password reset requests
+      // Fetch pending password reset requests (only for users, not admins)
       const { data: requestsData, error: requestsError } = await supabase
         .from('password_reset_requests')
         .select('*')
         .eq('status', 'pending')
+        .eq('role', 'user')
         .order('created_at', { ascending: false });
 
       if (requestsError) throw requestsError;
@@ -61,7 +62,18 @@ const PasswordResetManager = () => {
         .select('id, username, firstname, lastname, email');
 
       if (usersError) throw usersError;
-      setUsers(usersData || []);
+
+      // Fetch admin user IDs to filter them out
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['admin', 'super_admin']);
+
+      const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
+      
+      // Filter out admins from user list
+      const nonAdminUsers = (usersData || []).filter(user => !adminUserIds.has(user.id));
+      setUsers(nonAdminUsers);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
