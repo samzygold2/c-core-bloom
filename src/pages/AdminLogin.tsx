@@ -331,7 +331,7 @@ const AdminLogin = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-firstname">First Name</Label>
+                    <Label htmlFor="signup-firstname">First Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="signup-firstname"
                       type="text"
@@ -341,11 +341,12 @@ const AdminLogin = () => {
                       disabled={loading}
                       autoComplete="given-name"
                       maxLength={50}
+                      required
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signup-lastname">Last Name</Label>
+                    <Label htmlFor="signup-lastname">Last Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="signup-lastname"
                       type="text"
@@ -355,12 +356,13 @@ const AdminLogin = () => {
                       disabled={loading}
                       autoComplete="family-name"
                       maxLength={50}
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">Email <span className="text-destructive">*</span></Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -370,11 +372,12 @@ const AdminLogin = () => {
                     disabled={loading}
                     autoComplete="email"
                     maxLength={255}
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">Password <span className="text-destructive">*</span></Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -384,11 +387,12 @@ const AdminLogin = () => {
                     disabled={loading}
                     autoComplete="new-password"
                     maxLength={100}
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                  <Label htmlFor="signup-confirm-password">Confirm Password <span className="text-destructive">*</span></Label>
                   <Input
                     id="signup-confirm-password"
                     type="password"
@@ -398,6 +402,7 @@ const AdminLogin = () => {
                     disabled={loading}
                     autoComplete="new-password"
                     maxLength={100}
+                    required
                   />
                 </div>
 
