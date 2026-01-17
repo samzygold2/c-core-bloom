@@ -15,8 +15,12 @@ import { z } from 'zod';
 const signUpSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be less than 20 characters').regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
   firstname: z.string().min(2, 'First name must be at least 2 characters'),
   lastname: z.string().min(2, 'Last name must be at least 2 characters'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 const signInSchema = z.object({
@@ -37,6 +41,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
   const [selectedAdminId, setSelectedAdminId] = useState<string>('');
@@ -115,7 +120,7 @@ const Auth = () => {
           return;
         }
 
-        const validated = signUpSchema.parse({ username, password, firstname, lastname });
+        const validated = signUpSchema.parse({ username, password, confirmPassword, firstname, lastname });
         const email = usernameToEmail(validated.username);
         const { error, data } = await signUp(email, validated.password, validated.firstname, validated.lastname);
         
@@ -238,7 +243,7 @@ const Auth = () => {
               <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-1.5 sm:space-y-2">
-                    <Label htmlFor="signup-firstname" className="text-sm">First Name</Label>
+                    <Label htmlFor="signup-firstname" className="text-sm">First Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="signup-firstname"
                       type="text"
@@ -250,7 +255,7 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
-                    <Label htmlFor="signup-lastname" className="text-sm">Last Name</Label>
+                    <Label htmlFor="signup-lastname" className="text-sm">Last Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="signup-lastname"
                       type="text"
@@ -263,7 +268,7 @@ const Auth = () => {
                   </div>
                 </div>
                 <div className="space-y-1.5 sm:space-y-2">
-                  <Label htmlFor="signup-username" className="text-sm">Username</Label>
+                  <Label htmlFor="signup-username" className="text-sm">Username <span className="text-destructive">*</span></Label>
                   <Input
                     id="signup-username"
                     type="text"
@@ -275,12 +280,25 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-1.5 sm:space-y-2">
-                  <Label htmlFor="signup-password" className="text-sm">Password</Label>
+                  <Label htmlFor="signup-password" className="text-sm">Password <span className="text-destructive">*</span></Label>
                   <Input
                     id="signup-password"
                     type="password"
+                    placeholder="At least 6 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-9 sm:h-10"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="signup-confirm-password" className="text-sm">Confirm Password <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="signup-confirm-password"
+                    type="password"
+                    placeholder="Re-enter password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     className="h-9 sm:h-10"
                   />
