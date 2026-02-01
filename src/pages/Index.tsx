@@ -91,7 +91,7 @@ const Index = () => {
 
       <footer className="border-t bg-card/50 backdrop-blur-sm py-4 sm:py-6">
         <div className="container mx-auto text-center text-xs sm:text-sm text-muted-foreground px-4">
-          <p>© 2024 CBT Platform. Built with modern technology for the best testing experience.</p>
+          <p>© {new Date().getFullYear()} CBT Platform. Built with modern technology for the best testing experience.</p>
         </div>
       </footer>
     </div>

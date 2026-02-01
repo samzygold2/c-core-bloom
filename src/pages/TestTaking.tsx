@@ -51,8 +51,39 @@ const TestTaking = () => {
       return;
     }
     
-    initializeTest();
+    checkUserApprovalAndInit();
   }, [user, testId, authLoading, navigate]);
+
+  const checkUserApprovalAndInit = async () => {
+    // Check if user is approved (not pending and not waiting)
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('is_pending, is_waiting')
+      .eq('id', user!.id)
+      .single();
+
+    if (error || !profile) {
+      toast({
+        title: 'Error',
+        description: 'Failed to verify user status',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    if (profile.is_pending || profile.is_waiting) {
+      toast({
+        title: 'Access Denied',
+        description: 'Your account must be approved before taking tests',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    initializeTest();
+  };
 
   // Show loading spinner while auth is loading
   if (authLoading) {

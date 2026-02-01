@@ -109,17 +109,17 @@ const ResultDetail = () => {
           <CardHeader className="p-4 sm:p-6">
             <div className="mx-auto mb-3 sm:mb-4">
               {passed ? (
-                <div className="rounded-full bg-green-500/10 p-4 sm:p-6 w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto">
-                  <Trophy className="h-8 w-8 sm:h-12 sm:w-12 text-green-500" />
+                <div className="rounded-full bg-primary/10 p-4 sm:p-6 w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto">
+                  <Trophy className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
                 </div>
               ) : (
-                <div className="rounded-full bg-yellow-500/10 p-4 sm:p-6 w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto">
-                  <Target className="h-8 w-8 sm:h-12 sm:w-12 text-yellow-500" />
+                <div className="rounded-full bg-secondary/10 p-4 sm:p-6 w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto">
+                  <Target className="h-8 w-8 sm:h-12 sm:w-12 text-secondary-foreground" />
                 </div>
               )}
             </div>
             <CardTitle className="text-xl sm:text-3xl mb-2">{result.tests.title}</CardTitle>
-            <Badge className={passed ? 'bg-green-500' : 'bg-yellow-500'} variant="secondary">
+            <Badge variant={passed ? 'default' : 'secondary'}>
               {passed ? 'Passed' : 'Keep Practicing'}
             </Badge>
           </CardHeader>
@@ -131,11 +131,11 @@ const ResultDetail = () => {
             
             <div className="grid grid-cols-2 gap-3 sm:gap-4 text-left">
               <div className="rounded-lg border p-3 sm:p-4">
-                <div className="text-xl sm:text-2xl font-bold text-green-500">{result.score}</div>
+                <div className="text-xl sm:text-2xl font-bold text-primary">{result.score}</div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Correct Answers</p>
               </div>
               <div className="rounded-lg border p-3 sm:p-4">
-                <div className="text-xl sm:text-2xl font-bold text-red-500">
+                <div className="text-xl sm:text-2xl font-bold text-destructive">
                   {result.tests.total_questions - result.score}
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Incorrect Answers</p>

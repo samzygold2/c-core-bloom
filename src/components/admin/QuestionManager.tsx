@@ -58,18 +58,24 @@ export const QuestionManager = () => {
   }, []);
 
   const fetchTests = async () => {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    
     const { data } = await supabase
       .from('tests')
       .select('id, title')
+      .eq('created_by', userId)
       .order('created_at', { ascending: false });
     
     if (data) setTests(data);
   };
 
   const fetchQuestions = async () => {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    
     const { data } = await supabase
       .from('questions')
       .select('*, tests(title)')
+      .eq('created_by', userId)
       .order('is_reviewed', { ascending: true })
       .order('created_at', { ascending: false });
     
@@ -86,6 +92,8 @@ export const QuestionManager = () => {
       return;
     }
 
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    
     const { error } = await supabase
       .from('questions')
       .insert({
@@ -94,6 +102,7 @@ export const QuestionManager = () => {
         options: options,
         correct_answer: correctAnswer,
         difficulty: difficulty,
+        created_by: userId,
       });
 
     if (error) {
@@ -248,6 +257,8 @@ export const QuestionManager = () => {
         return;
       }
 
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      
       const { error } = await supabase
         .from('questions')
         .insert(validQuestions.map(q => ({
@@ -257,6 +268,7 @@ export const QuestionManager = () => {
           correct_answer: q.correct_answer,
           difficulty: q.difficulty || 'medium',
           is_reviewed: false,
+          created_by: userId,
         })));
 
       if (error) {
