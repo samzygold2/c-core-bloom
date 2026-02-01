@@ -30,9 +30,12 @@ export const TestManager = () => {
   }, []);
 
   const fetchTests = async () => {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    
     const { data } = await supabase
       .from('tests')
       .select('*')
+      .eq('created_by', userId)
       .order('created_at', { ascending: false });
     
     if (data) setTests(data);
@@ -178,7 +181,7 @@ export const TestManager = () => {
                   <div className="flex gap-2 mt-2">
                     <Badge variant="secondary">{test.duration_minutes} min</Badge>
                     <Badge variant="outline">{test.total_questions} questions</Badge>
-                    <Badge className={test.is_active ? 'bg-green-500' : 'bg-gray-500'}>
+                    <Badge variant={test.is_active ? 'default' : 'secondary'}>
                       {test.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>

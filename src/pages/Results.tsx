@@ -69,11 +69,11 @@ const Results = () => {
     setLoading(false);
   };
 
-  const getScoreColor = (score: number, total: number) => {
+  const getScoreVariant = (score: number, total: number): 'default' | 'secondary' | 'destructive' => {
     const percentage = (score / total) * 100;
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (percentage >= 80) return 'default';
+    if (percentage >= 60) return 'secondary';
+    return 'destructive';
   };
 
   return (
@@ -130,7 +130,7 @@ const Results = () => {
                           </span>
                         </div>
                       </div>
-                      <Badge className={`${getScoreColor(result.score, result.tests.total_questions)} self-start sm:self-center`}>
+                      <Badge variant={getScoreVariant(result.score, result.tests.total_questions)} className="self-start sm:self-center">
                         {percentage}%
                       </Badge>
                     </div>

@@ -20,6 +20,7 @@ const Dashboard = () => {
   const { user, isAdmin, signOut, loading: authLoading } = useAuth();
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userStatus, setUserStatus] = useState<{ is_pending: boolean; is_waiting: boolean } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -32,8 +33,27 @@ const Dashboard = () => {
       return;
     }
     
-    fetchTests();
+    checkUserStatus();
   }, [user, authLoading, navigate]);
+
+  const checkUserStatus = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_pending, is_waiting')
+      .eq('id', user!.id)
+      .single();
+
+    if (!error && data) {
+      setUserStatus(data);
+      if (!data.is_pending && !data.is_waiting) {
+        fetchTests();
+      } else {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
+  };
 
   // Show loading spinner while auth is loading
   if (authLoading) {
@@ -99,54 +119,82 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto p-4 sm:p-6">
-        <div className="mb-4 sm:mb-6">
-          <h2 className="text-2xl sm:text-3xl font-bold">Available Tests</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Select a test to begin</p>
-        </div>
-
-        {loading ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader className="h-32 bg-muted" />
-              </Card>
-            ))}
-          </div>
-        ) : tests.length === 0 ? (
-          <Card>
+        {userStatus?.is_pending && (
+          <Card className="mb-6">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">No active tests available</p>
+              <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Account Pending Approval</h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                Your account is awaiting approval from your assigned admin. You'll be able to access tests once approved.
+              </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {tests.map((test) => (
-              <Card key={test.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg sm:text-xl">{test.title}</CardTitle>
-                  <CardDescription className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {test.duration_minutes} min
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {test.total_questions} questions
-                    </span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Badge className="mb-3" variant="secondary">
-                    {test.duration_minutes === 30 ? 'Short Test' : 'Full Test'}
-                  </Badge>
-                  <Button onClick={() => startTest(test.id)} className="w-full">
-                    Start Test
-                  </Button>
+        )}
+
+        {userStatus?.is_waiting && (
+          <Card className="mb-6">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Awaiting Admin Assignment</h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                You're waiting to be assigned to an admin. Please check back later.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!userStatus?.is_pending && !userStatus?.is_waiting && (
+          <>
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold">Available Tests</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">Select a test to begin</p>
+            </div>
+
+            {loading ? (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardHeader className="h-32 bg-muted" />
+                  </Card>
+                ))}
+              </div>
+            ) : tests.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg text-muted-foreground">No active tests available</p>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            ) : (
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {tests.map((test) => (
+                  <Card key={test.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg sm:text-xl">{test.title}</CardTitle>
+                      <CardDescription className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                          {test.duration_minutes} min
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+                          {test.total_questions} questions
+                        </span>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Badge className="mb-3" variant="secondary">
+                        {test.duration_minutes === 30 ? 'Short Test' : 'Full Test'}
+                      </Badge>
+                      <Button onClick={() => startTest(test.id)} className="w-full">
+                        Start Test
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
