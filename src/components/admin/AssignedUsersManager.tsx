@@ -25,6 +25,7 @@ export const AssignedUsersManager = () => {
   const [assignedUsers, setAssignedUsers] = useState<UserProfile[]>([]);
   const [waitingUsers, setWaitingUsers] = useState<UserProfile[]>([]);
   const [pendingUsers, setPendingUsers] = useState<UserProfile[]>([]);
+  const [activeTab, setActiveTab] = useState<'pending' | 'assigned' | 'waiting'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
@@ -173,23 +174,34 @@ export const AssignedUsersManager = () => {
   const handleAcceptUser = async (userProfile: UserProfile) => {
     if (!user) return;
 
-    const { error } = await supabase
+    // IMPORTANT: supabase-js can return { error: null } even when 0 rows were updated.
+    // We both *constrain* the update to the expected pending state and fetch the updated row back.
+    const { data: confirmed, error } = await supabase
       .from('profiles')
-      .update({ 
+      .update({
         assigned_admin_id: user.id,
         is_pending: false,
-        is_waiting: false
+        is_waiting: false,
       })
-      .eq('id', userProfile.id);
+      .eq('id', userProfile.id)
+      .eq('assigned_admin_id', user.id)
+      .eq('is_pending', true)
+      .select('id, firstname, lastname, email, created_at, assigned_admin_id, is_waiting, is_pending')
+      .maybeSingle();
 
-    if (error) {
+    if (error || !confirmed) {
       toast({
         title: 'Error',
-        description: 'Failed to accept user',
+        description: 'User could not be accepted (no changes applied). Please refresh and try again.',
         variant: 'destructive',
       });
       return;
     }
+
+    // Optimistically move the user to "My Users" immediately.
+    setPendingUsers((prev) => prev.filter((u) => u.id !== userProfile.id));
+    setAssignedUsers((prev) => [confirmed, ...prev.filter((u) => u.id !== userProfile.id)]);
+    setActiveTab('assigned');
 
     toast({
       title: 'User Accepted',
@@ -201,6 +213,7 @@ export const AssignedUsersManager = () => {
       action: `Accepted user ${userProfile.firstname} ${userProfile.lastname}`,
     });
 
+    // Keep lists in sync with backend state.
     fetchUsers();
   };
 
@@ -235,6 +248,7 @@ export const AssignedUsersManager = () => {
       action: `Assigned user ${userProfile.firstname} ${userProfile.lastname} from waiting list`,
     });
 
+    setActiveTab('assigned');
     fetchUsers();
   };
 
@@ -382,7 +396,13 @@ export const AssignedUsersManager = () => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="pending" className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => {
+          if (v === 'pending' || v === 'assigned' || v === 'waiting') setActiveTab(v);
+        }}
+        className="space-y-4"
+      >
         <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="pending" className="flex-1 min-w-[100px] text-xs sm:text-sm">
             Pending ({pendingUsers.length})
