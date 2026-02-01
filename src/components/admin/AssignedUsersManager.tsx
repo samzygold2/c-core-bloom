@@ -176,6 +176,7 @@ export const AssignedUsersManager = () => {
     const { error } = await supabase
       .from('profiles')
       .update({ 
+        assigned_admin_id: user.id,
         is_pending: false,
         is_waiting: false
       })
