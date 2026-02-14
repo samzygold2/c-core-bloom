@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Clock, BookOpen, LogOut, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { UserSettingsDialog } from '@/components/UserSettingsDialog';
 
 interface Test {
   id: string;
@@ -105,6 +106,7 @@ const Dashboard = () => {
                 <span className="xs:hidden">Admin</span>
               </Button>
             )}
+            <UserSettingsDialog />
             <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate('/results')}>
               <span className="hidden sm:inline">My Results</span>
               <span className="sm:hidden">Results</span>
