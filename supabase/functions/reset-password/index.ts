@@ -105,6 +105,25 @@ serve(async (req) => {
           );
         }
 
+        // Check if the caller is only an admin (not super_admin)
+        const isOnlyAdmin = roleData.some(r => r.role === 'admin') && !roleData.some(r => r.role === 'super_admin');
+
+        if (isOnlyAdmin) {
+          // Admins cannot generate OTPs for other admins/super_admins
+          const { data: targetRoles } = await supabaseAdmin
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', targetUserId)
+            .in('role', ['admin', 'super_admin']);
+
+          if (targetRoles && targetRoles.length > 0) {
+            return new Response(
+              JSON.stringify({ error: 'Admins cannot generate OTPs for other admins. Contact a Super Admin.' }),
+              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+
         // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
