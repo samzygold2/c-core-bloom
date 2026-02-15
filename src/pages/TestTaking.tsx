@@ -116,10 +116,10 @@ const TestTaking = () => {
       .select('id, test_id, question_text, options, difficulty, created_at')
       .eq('test_id', testId);
 
-    if (questionsError || !questionsData) {
+    if (questionsError || !questionsData || questionsData.length === 0) {
       toast({
         title: 'Error',
-        description: 'Failed to load questions',
+        description: questionsData?.length === 0 ? 'No questions found for this test' : 'Failed to load questions',
         variant: 'destructive',
       });
       navigate('/dashboard');
