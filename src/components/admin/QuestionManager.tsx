@@ -966,7 +966,13 @@ export const QuestionManager = () => {
       <AlertDialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Bulk Import Questions</AlertDialogTitle>
+            <div className="flex items-center justify-between">
+              <AlertDialogTitle>Bulk Import Questions</AlertDialogTitle>
+              <Button variant="outline" size="sm" onClick={() => setShowImportDialog(false)}>
+                <X className="mr-1 h-4 w-4" />
+                Back
+              </Button>
+            </div>
             <AlertDialogDescription className="space-y-4">
               <div>
                 <p className="mb-4">Upload a CSV or JSON file with questions. Make sure your file includes:</p>
