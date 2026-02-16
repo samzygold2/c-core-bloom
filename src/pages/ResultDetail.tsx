@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Trophy, Target } from 'lucide-react';
+import { Trophy, Target } from 'lucide-react';
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface UserTest {
   id: string;
@@ -24,18 +25,11 @@ const ResultDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Wait for auth to finish loading before redirecting
     if (authLoading) return;
-    
-    if (!user || !resultId) {
-      navigate('/auth');
-      return;
-    }
-    
+    if (!user || !resultId) { navigate('/auth'); return; }
     fetchResult();
   }, [user, resultId, authLoading, navigate]);
 
-  // Show loading spinner while auth is loading
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -47,14 +41,7 @@ const ResultDetail = () => {
   const fetchResult = async () => {
     const { data, error } = await supabase
       .from('user_tests')
-      .select(`
-        id,
-        score,
-        tests (
-          title,
-          total_questions
-        )
-      `)
+      .select(`id, score, tests (title, total_questions)`)
       .eq('id', resultId)
       .eq('user_id', user!.id)
       .single();
@@ -92,19 +79,8 @@ const ResultDetail = () => {
   const passed = parseFloat(percentage) >= 60;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between p-3 sm:p-4">
-          <h1 className="text-lg sm:text-2xl font-bold">Test Results</h1>
-          <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Back to Dashboard</span>
-            <span className="sm:hidden">Back</span>
-          </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto max-w-2xl p-4 sm:p-6">
+    <DashboardLayout title="Test Results" subtitle={result.tests.title}>
+      <div className="max-w-2xl mx-auto">
         <Card className="text-center">
           <CardHeader className="p-4 sm:p-6">
             <div className="mx-auto mb-3 sm:mb-4">
@@ -152,8 +128,8 @@ const ResultDetail = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 

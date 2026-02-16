@@ -14,7 +14,7 @@ interface AdminProfile {
   lastname: string;
 }
 
-export const UserSettingsDialog = () => {
+export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVariant?: 'default' | 'sidebar' }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -87,11 +87,17 @@ export const UserSettingsDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-          <Settings className="mr-1 sm:mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Settings</span>
-          <span className="sm:hidden">Settings</span>
-        </Button>
+        {triggerVariant === 'sidebar' ? (
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-muted-foreground">
+            <Settings className="h-4 w-4" />
+            <span>Settings</span>
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+            <Settings className="mr-1 sm:mr-2 h-4 w-4" />
+            Settings
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
