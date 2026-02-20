@@ -38,6 +38,7 @@ export const QuestionManager = () => {
   const [correctAnswer, setCorrectAnswer] = useState(0);
   const [difficulty, setDifficulty] = useState('medium');
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importTestId, setImportTestId] = useState('');
   const [importing, setImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTest, setFilterTest] = useState('all');
@@ -216,7 +217,7 @@ export const QuestionManager = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!selectedTest) {
+    if (!importTestId) {
       toast({
         title: 'Error',
         description: 'Please select a test first before importing questions',
@@ -281,7 +282,7 @@ export const QuestionManager = () => {
       const { error } = await supabase
         .from('questions')
         .insert(validQuestions.map(q => ({
-          test_id: q.test_id || selectedTest,
+          test_id: importTestId,
           question_text: q.question_text,
           options: q.options,
           correct_answer: q.correct_answer,
@@ -381,14 +382,12 @@ export const QuestionManager = () => {
   const downloadTemplate = (format: 'json' | 'csv') => {
     const sampleQuestions = [
       {
-        test_id: 'YOUR_TEST_ID_HERE',
         question_text: 'What is 2 + 2?',
         options: ['3', '4', '5', '6'],
         correct_answer: 1,
         difficulty: 'easy'
       },
       {
-        test_id: 'YOUR_TEST_ID_HERE',
         question_text: 'Which planet is closest to the sun?',
         options: ['Venus', 'Mercury', 'Earth', 'Mars'],
         correct_answer: 1,
@@ -405,9 +404,9 @@ export const QuestionManager = () => {
       filename = 'questions_template.json';
       mimeType = 'application/json';
     } else {
-      const headers = 'test_id,question_text,options,correct_answer,difficulty';
+      const headers = 'question_text,options,correct_answer,difficulty';
       const rows = sampleQuestions.map(q => 
-        `${q.test_id},"${q.question_text}","${q.options.join('|')}",${q.correct_answer},${q.difficulty}`
+        `"${q.question_text}","${q.options.join('|')}",${q.correct_answer},${q.difficulty}`
       );
       content = [headers, ...rows].join('\n');
       filename = 'questions_template.csv';
@@ -1021,58 +1020,67 @@ export const QuestionManager = () => {
                 Back
               </Button>
             </div>
-            <AlertDialogDescription className="space-y-4">
-              <div>
-                <p className="mb-4">Upload a CSV or JSON file with questions. Make sure your file includes:</p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li><strong>test_id</strong>: The ID of the test</li>
-                  <li><strong>question_text</strong>: The question</li>
-                  <li><strong>options</strong>: Array of options (JSON) or pipe-separated (CSV: "Option1|Option2|Option3")</li>
-                  <li><strong>correct_answer</strong>: Index of correct option (0-based)</li>
-                  <li><strong>difficulty</strong>: easy, medium, or hard (optional, defaults to medium)</li>
-                </ul>
-              </div>
+            <AlertDialogDescription className="space-y-4" asChild>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Assign to Test</Label>
+                  <Select value={importTestId} onValueChange={setImportTestId}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select a test to assign questions to" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tests.map((test) => (
+                        <SelectItem key={test.id} value={test.id}>
+                          {test.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadTemplate('json')}
-                >
-                  Download JSON Template
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadTemplate('csv')}
-                >
-                  Download CSV Template
-                </Button>
-              </div>
+                <div>
+                  <p className="mb-2 text-sm">Upload a CSV or JSON file with questions. Required fields:</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                    <li><strong>question_text</strong>: The question</li>
+                    <li><strong>options</strong>: Array of options (JSON) or pipe-separated (CSV: "Option1|Option2|Option3")</li>
+                    <li><strong>correct_answer</strong>: Index of correct option (0-based)</li>
+                    <li><strong>difficulty</strong>: easy, medium, or hard (optional, defaults to medium)</li>
+                  </ul>
+                </div>
 
-              <div className="border-2 border-dashed rounded-lg p-6">
-                <Input
-                  type="file"
-                  accept=".csv,.json"
-                  onChange={handleFileImport}
-                  disabled={importing}
-                  className="cursor-pointer"
-                />
-                {importing && (
-                  <p className="mt-2 text-sm text-muted-foreground">Importing questions...</p>
-                )}
-              </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadTemplate('json')}
+                  >
+                    Download JSON Template
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadTemplate('csv')}
+                  >
+                    Download CSV Template
+                  </Button>
+                </div>
 
-              <div className="bg-muted p-3 rounded text-xs">
-                <strong>Available Test IDs:</strong>
-                <div className="mt-2 space-y-1">
-                  {tests.map(test => (
-                    <div key={test.id} className="font-mono">
-                      {test.title}: <span className="text-primary">{test.id}</span>
-                    </div>
-                  ))}
+                <div className="border-2 border-dashed rounded-lg p-6">
+                  <Input
+                    type="file"
+                    accept=".csv,.json"
+                    onChange={handleFileImport}
+                    disabled={importing || !importTestId}
+                    className="cursor-pointer"
+                  />
+                  {!importTestId && (
+                    <p className="mt-2 text-sm text-amber-600">Please select a test above first</p>
+                  )}
+                  {importing && (
+                    <p className="mt-2 text-sm text-muted-foreground">Importing questions...</p>
+                  )}
                 </div>
               </div>
             </AlertDialogDescription>
