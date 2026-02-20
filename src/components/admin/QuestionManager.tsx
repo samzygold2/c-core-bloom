@@ -216,6 +216,16 @@ export const QuestionManager = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!selectedTest) {
+      toast({
+        title: 'Error',
+        description: 'Please select a test first before importing questions',
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
     setImporting(true);
 
     try {
@@ -236,9 +246,18 @@ export const QuestionManager = () => {
         return;
       }
 
-      // Validate and insert questions
+      if (questions.length === 0) {
+        toast({
+          title: 'Error',
+          description: 'No questions found in file. Check the format matches the template.',
+          variant: 'destructive',
+        });
+        setImporting(false);
+        return;
+      }
+
+      // Validate questions - test_id is auto-assigned from selected test
       const validQuestions = questions.filter(q => 
-        q.test_id && 
         q.question_text?.trim() && 
         Array.isArray(q.options) && 
         q.options.length >= 2 &&
@@ -250,7 +269,7 @@ export const QuestionManager = () => {
       if (validQuestions.length === 0) {
         toast({
           title: 'Error',
-          description: 'No valid questions found in file',
+          description: `No valid questions found. Each question needs: question_text, options (2+), and correct_answer (0-based index). Found ${questions.length} row(s) but none passed validation.`,
           variant: 'destructive',
         });
         setImporting(false);
@@ -262,7 +281,7 @@ export const QuestionManager = () => {
       const { error } = await supabase
         .from('questions')
         .insert(validQuestions.map(q => ({
-          test_id: q.test_id,
+          test_id: q.test_id || selectedTest,
           question_text: q.question_text,
           options: q.options,
           correct_answer: q.correct_answer,
@@ -272,9 +291,10 @@ export const QuestionManager = () => {
         })));
 
       if (error) {
+        console.error('Import error:', error);
         toast({
           title: 'Error',
-          description: 'Failed to import questions',
+          description: `Failed to import: ${error.message}`,
           variant: 'destructive',
         });
       } else {
@@ -292,9 +312,10 @@ export const QuestionManager = () => {
         setShowImportDialog(false);
       }
     } catch (error) {
+      console.error('File parse error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to parse file',
+        description: `Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     } finally {
@@ -303,24 +324,51 @@ export const QuestionManager = () => {
     }
   };
 
+  const parseCSVLine = (line: string): string[] => {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  };
+
   const parseCSV = (text: string): any[] => {
-    const lines = text.trim().split('\n');
+    const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return [];
 
-    const headers = lines[0].split(',').map(h => h.trim());
+    const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
     const questions: any[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
+      if (!lines[i].trim()) continue;
+      const values = parseCSVLine(lines[i]);
       const question: any = {};
 
       headers.forEach((header, index) => {
+        const value = values[index] || '';
         if (header === 'options') {
-          question[header] = values[index].split('|').map(o => o.trim());
+          question[header] = value.split('|').map(o => o.trim()).filter(o => o);
         } else if (header === 'correct_answer') {
-          question[header] = parseInt(values[index]);
+          question[header] = parseInt(value, 10);
         } else {
-          question[header] = values[index];
+          question[header] = value;
         }
       });
 
