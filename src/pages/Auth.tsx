@@ -109,7 +109,7 @@ const Auth = () => {
             title: 'Success',
             description: 'Logged in successfully!',
           });
-          navigate('/dashboard');
+          // Navigation handled by useEffect based on role
         }
       } else {
         // Validate admin selection is required
