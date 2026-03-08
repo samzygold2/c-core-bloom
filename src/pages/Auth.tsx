@@ -47,7 +47,7 @@ const Auth = () => {
   const [selectedAdminId, setSelectedAdminId] = useState<string>('');
   const [admins, setAdmins] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user, loading: authLoading } = useAuth();
+  const { signIn, signUp, user, isAdmin, adminLoading, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
