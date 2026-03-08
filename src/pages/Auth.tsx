@@ -51,7 +51,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { isAdmin, adminLoading } = useAuth();
+  
 
   useEffect(() => {
     // Redirect based on role once auth and admin check are done
