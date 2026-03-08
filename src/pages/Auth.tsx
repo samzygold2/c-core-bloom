@@ -51,12 +51,15 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const { isAdmin, adminLoading } = useAuth();
+
   useEffect(() => {
-    // Redirect to dashboard if already logged in
-    if (!authLoading && user) {
-      navigate('/dashboard');
+    // Redirect based on role once auth and admin check are done
+    if (authLoading || adminLoading) return;
+    if (user) {
+      navigate(isAdmin ? '/admin' : '/dashboard');
     }
-  }, [user, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, adminLoading, navigate]);
 
   useEffect(() => {
     fetchAdmins();
