@@ -13,7 +13,7 @@ export const TestTimer = ({ durationMinutes, onTimeUp }: TestTimerProps) => {
   const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
