@@ -43,8 +43,8 @@ const Admin = () => {
     if (!user) return;
     const [assignedRes, activeTestsRes, questionsRes, completedRes] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('assigned_admin_id', user.id).eq('is_waiting', false),
-      supabase.from('tests').select('id', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('questions').select('id', { count: 'exact', head: true }),
+      supabase.from('tests').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('created_by', user.id),
+      supabase.from('questions').select('id', { count: 'exact', head: true }).eq('created_by', user.id),
       supabase.from('user_tests').select('id, profiles!inner(assigned_admin_id)', { count: 'exact', head: true }).eq('profiles.assigned_admin_id', user.id).not('score', 'is', null),
     ]);
     setStats({
