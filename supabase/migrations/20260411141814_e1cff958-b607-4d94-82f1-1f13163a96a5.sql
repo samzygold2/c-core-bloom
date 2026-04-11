@@ -1,0 +1,1 @@
+DROP POLICY "Admins can view their own tests" ON public.tests;
