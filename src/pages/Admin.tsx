@@ -41,17 +41,36 @@ const Admin = () => {
 
   const fetchAdminStats = async () => {
     if (!user) return;
-    const [assignedRes, activeTestsRes, questionsRes, completedRes] = await Promise.all([
+    // Get assigned user IDs first, then count their completed exams
+    const [assignedRes, activeTestsRes, questionsRes] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('assigned_admin_id', user.id).eq('is_waiting', false),
       supabase.from('tests').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('created_by', user.id),
       supabase.from('questions').select('id', { count: 'exact', head: true }).eq('created_by', user.id),
-      supabase.from('user_tests').select('id, profiles!inner(assigned_admin_id)', { count: 'exact', head: true }).eq('profiles.assigned_admin_id', user.id).not('score', 'is', null),
     ]);
+
+    // Fetch assigned user IDs to count completed exams
+    let completedCount = 0;
+    const { data: assignedProfiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('assigned_admin_id', user.id)
+      .eq('is_waiting', false);
+    
+    if (assignedProfiles && assignedProfiles.length > 0) {
+      const userIds = assignedProfiles.map(p => p.id);
+      const { count } = await supabase
+        .from('user_tests')
+        .select('id', { count: 'exact', head: true })
+        .in('user_id', userIds)
+        .not('score', 'is', null);
+      completedCount = count || 0;
+    }
+
     setStats({
       assignedUsers: assignedRes.count || 0,
       activeTests: activeTestsRes.count || 0,
       totalQuestions: questionsRes.count || 0,
-      completedExams: completedRes.count || 0,
+      completedExams: completedCount,
     });
   };
 

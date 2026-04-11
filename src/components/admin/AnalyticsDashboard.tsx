@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, BookOpen, Trophy, TrendingUp, Activity, Clock, BarChart3, UserCheck, Download, FileDown } from 'lucide-react';
@@ -39,6 +40,7 @@ interface RecentActivity {
 
 export const AnalyticsDashboard = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalTests: 0,
@@ -54,47 +56,86 @@ export const AnalyticsDashboard = () => {
   const [downloadingAll, setDownloadingAll] = useState(false);
 
   useEffect(() => {
-    fetchStats();
-    fetchTestPerformance();
-    fetchRecentActivity();
-    fetchAllResults();
-  }, []);
+    if (user) {
+      fetchStats();
+      fetchTestPerformance();
+      fetchRecentActivity();
+      fetchAllResults();
+    }
+  }, [user]);
+
+  // Helper: get assigned user IDs for this admin
+  const getAssignedUserIds = async (): Promise<string[]> => {
+    if (!user) return [];
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('assigned_admin_id', user.id)
+      .eq('is_waiting', false);
+    return data?.map(p => p.id) || [];
+  };
+
+  // Helper: get test IDs created by this admin
+  const getMyTestIds = async (): Promise<string[]> => {
+    if (!user) return [];
+    const { data } = await supabase
+      .from('tests')
+      .select('id')
+      .eq('created_by', user.id);
+    return data?.map(t => t.id) || [];
+  };
 
   const fetchStats = async () => {
-    const [usersRes, testsRes, activeTestsRes, attemptsRes] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      supabase.from('tests').select('id', { count: 'exact', head: true }),
-      supabase.from('tests').select('id', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('user_tests').select('score, start_time, end_time').not('score', 'is', null),
+    if (!user) return;
+    
+    const userIds = await getAssignedUserIds();
+    
+    const [usersRes, testsRes, activeTestsRes] = await Promise.all([
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('assigned_admin_id', user.id).eq('is_waiting', false),
+      supabase.from('tests').select('id', { count: 'exact', head: true }).eq('created_by', user.id),
+      supabase.from('tests').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('created_by', user.id),
     ]);
 
     const totalUsers = usersRes.count || 0;
     const totalTests = testsRes.count || 0;
     const activeTests = activeTestsRes.count || 0;
-    const attempts = attemptsRes.data || [];
-    const totalAttempts = attempts.length;
-    
-    const averageScore = totalAttempts > 0
-      ? attempts.reduce((sum, a) => sum + (a.score || 0), 0) / totalAttempts
-      : 0;
 
-    // Calculate completion rate (attempts with scores vs total attempts)
-    const { count: totalStarted } = await supabase
-      .from('user_tests')
-      .select('id', { count: 'exact', head: true });
-    const completionRate = totalStarted ? (totalAttempts / totalStarted) * 100 : 0;
+    let totalAttempts = 0;
+    let averageScore = 0;
+    let completionRate = 0;
+    let averageDuration = 0;
 
-    // Calculate average duration
-    const durationsInMinutes = attempts
-      .filter(a => a.start_time && a.end_time)
-      .map(a => {
-        const start = new Date(a.start_time!).getTime();
-        const end = new Date(a.end_time!).getTime();
-        return (end - start) / 1000 / 60; // Convert to minutes
-      });
-    const averageDuration = durationsInMinutes.length > 0
-      ? durationsInMinutes.reduce((sum, d) => sum + d, 0) / durationsInMinutes.length
-      : 0;
+    if (userIds.length > 0) {
+      const { data: attempts } = await supabase
+        .from('user_tests')
+        .select('score, start_time, end_time')
+        .in('user_id', userIds)
+        .not('score', 'is', null);
+
+      const completedAttempts = attempts || [];
+      totalAttempts = completedAttempts.length;
+
+      averageScore = totalAttempts > 0
+        ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / totalAttempts
+        : 0;
+
+      const { count: totalStarted } = await supabase
+        .from('user_tests')
+        .select('id', { count: 'exact', head: true })
+        .in('user_id', userIds);
+      completionRate = totalStarted ? (totalAttempts / totalStarted) * 100 : 0;
+
+      const durationsInMinutes = completedAttempts
+        .filter(a => a.start_time && a.end_time)
+        .map(a => {
+          const start = new Date(a.start_time!).getTime();
+          const end = new Date(a.end_time!).getTime();
+          return (end - start) / 1000 / 60;
+        });
+      averageDuration = durationsInMinutes.length > 0
+        ? durationsInMinutes.reduce((sum, d) => sum + d, 0) / durationsInMinutes.length
+        : 0;
+    }
 
     setStats({
       totalUsers,
@@ -108,14 +149,18 @@ export const AnalyticsDashboard = () => {
   };
 
   const fetchTestPerformance = async () => {
+    if (!user) return;
+    const userIds = await getAssignedUserIds();
+    if (userIds.length === 0) { setTestPerformance([]); return; }
+
     const { data: attempts } = await supabase
       .from('user_tests')
       .select('test_id, score, tests(title)')
+      .in('user_id', userIds)
       .not('score', 'is', null);
 
     if (!attempts) return;
 
-    // Group by test
     const testMap = new Map<string, { scores: number[]; title: string }>();
     attempts.forEach((attempt: any) => {
       const testId = attempt.test_id;
@@ -126,7 +171,6 @@ export const AnalyticsDashboard = () => {
       testMap.get(testId)?.scores.push(attempt.score);
     });
 
-    // Calculate performance metrics
     const performance: TestPerformance[] = Array.from(testMap.entries()).map(([_, data]) => {
       const avgScore = data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length;
       const passRate = (data.scores.filter(s => s >= 50).length / data.scores.length) * 100;
@@ -141,72 +185,56 @@ export const AnalyticsDashboard = () => {
     setTestPerformance(performance.sort((a, b) => b.attempts - a.attempts).slice(0, 5));
   };
 
-  const fetchRecentActivity = async () => {
-    const { data } = await supabase
+  const fetchActivityData = async (limit?: number) => {
+    if (!user) return [];
+    const userIds = await getAssignedUserIds();
+    if (userIds.length === 0) return [];
+
+    let query = supabase
       .from('user_tests')
-      .select(`
-        id,
-        score,
-        start_time,
-        end_time,
-        answers,
-        created_at,
-        tests(title, total_questions),
-        profiles(firstname, lastname, email)
-      `)
+      .select('id, score, start_time, end_time, answers, created_at, user_id, tests(title, total_questions)')
+      .in('user_id', userIds)
       .not('score', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .order('created_at', { ascending: false });
 
-    if (!data) return;
+    if (limit) query = query.limit(limit);
 
-    const activity: RecentActivity[] = data.map((item: any) => ({
-      id: item.id,
-      username: item.profiles ? `${item.profiles.firstname} ${item.profiles.lastname}` : 'Unknown User',
-      email: item.profiles?.email || '',
-      testTitle: item.tests?.title || 'Unknown Test',
-      score: item.score,
-      totalQuestions: item.tests?.total_questions || 0,
-      timestamp: new Date(item.created_at).toLocaleString(),
-      startTime: item.start_time,
-      endTime: item.end_time,
-      answers: item.answers,
-    }));
+    const { data } = await query;
+    if (!data) return [];
 
+    // Fetch profile info for these users
+    const relevantUserIds = [...new Set(data.map((d: any) => d.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, firstname, lastname, email')
+      .in('id', relevantUserIds);
+
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+    return data.map((item: any) => {
+      const profile = profileMap.get(item.user_id);
+      return {
+        id: item.id,
+        username: profile ? `${profile.firstname} ${profile.lastname}` : 'Unknown User',
+        email: profile?.email || '',
+        testTitle: item.tests?.title || 'Unknown Test',
+        score: item.score,
+        totalQuestions: item.tests?.total_questions || 0,
+        timestamp: new Date(item.created_at).toLocaleString(),
+        startTime: item.start_time,
+        endTime: item.end_time,
+        answers: item.answers,
+      };
+    });
+  };
+
+  const fetchRecentActivity = async () => {
+    const activity = await fetchActivityData(5);
     setRecentActivity(activity);
   };
 
   const fetchAllResults = async () => {
-    const { data } = await supabase
-      .from('user_tests')
-      .select(`
-        id,
-        score,
-        start_time,
-        end_time,
-        answers,
-        created_at,
-        tests(title, total_questions),
-        profiles(firstname, lastname, email)
-      `)
-      .not('score', 'is', null)
-      .order('created_at', { ascending: false });
-
-    if (!data) return;
-
-    const results: RecentActivity[] = data.map((item: any) => ({
-      id: item.id,
-      username: item.profiles ? `${item.profiles.firstname} ${item.profiles.lastname}` : 'Unknown User',
-      email: item.profiles?.email || '',
-      testTitle: item.tests?.title || 'Unknown Test',
-      score: item.score,
-      totalQuestions: item.tests?.total_questions || 0,
-      timestamp: new Date(item.created_at).toLocaleString(),
-      startTime: item.start_time,
-      endTime: item.end_time,
-      answers: item.answers,
-    }));
-
+    const results = await fetchActivityData();
     setAllResults(results);
   };
 
@@ -281,7 +309,7 @@ export const AnalyticsDashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Performance Analytics</h2>
-          <p className="text-muted-foreground">Monitor system performance and user activity</p>
+          <p className="text-muted-foreground">Monitor your students' performance</p>
         </div>
         <Button 
           onClick={handleDownloadAllPDF} 
@@ -296,12 +324,12 @@ export const AnalyticsDashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">My Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">Registered accounts</p>
+            <p className="text-xs text-muted-foreground mt-1">Assigned to you</p>
           </CardContent>
         </Card>
 

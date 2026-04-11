@@ -84,7 +84,8 @@ const Results = () => {
       ) : (
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           {results.map((result) => {
-            const percentage = ((result.score / result.tests.total_questions) * 100).toFixed(1);
+            const total = result.tests.total_questions || 1;
+            const percentage = ((result.score / total) * 100).toFixed(1);
             return (
               <Card key={result.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="p-4 sm:p-6">
