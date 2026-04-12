@@ -426,7 +426,7 @@ export const QuestionManager = () => {
   const filteredQuestions = questions.filter(question => {
     const matchesSearch = question.question_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           question.options.some(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesTest = filterTest === 'all' || question.tests.title === filterTest;
+    const matchesTest = filterTest === 'all' || question.tests?.title === filterTest;
     const matchesDifficulty = filterDifficulty === 'all' || question.difficulty === filterDifficulty;
     const matchesReviewStatus = filterReviewStatus === 'all' || 
                                  (filterReviewStatus === 'pending' && !question.is_reviewed) ||
@@ -945,7 +945,7 @@ export const QuestionManager = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                      <span>{question.tests.title}</span>
+                      <span>{question.tests?.title ?? 'Unknown Test'}</span>
                       <span>•</span>
                       <span className="capitalize">{question.difficulty}</span>
                       <span>•</span>
