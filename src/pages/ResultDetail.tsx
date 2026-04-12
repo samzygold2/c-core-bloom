@@ -75,7 +75,8 @@ const ResultDetail = () => {
     );
   }
 
-  const total = result.tests.total_questions || 1;
+  const testTitle = result.tests?.title ?? 'Unknown Test';
+  const total = result.tests?.total_questions || 1;
   const percentage = ((result.score / total) * 100).toFixed(1);
   const passed = parseFloat(percentage) >= 60;
 

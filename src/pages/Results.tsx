@@ -84,14 +84,15 @@ const Results = () => {
       ) : (
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           {results.map((result) => {
-            const total = result.tests.total_questions || 1;
+            const testTitle = result.tests?.title ?? 'Unknown Test';
+            const total = result.tests?.total_questions || 1;
             const percentage = ((result.score / total) * 100).toFixed(1);
             return (
               <Card key={result.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="p-4 sm:p-6">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <CardTitle className="text-base sm:text-lg mb-1 sm:mb-2 truncate">{result.tests.title}</CardTitle>
+                      <CardTitle className="text-base sm:text-lg mb-1 sm:mb-2 truncate">{testTitle}</CardTitle>
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -103,7 +104,7 @@ const Results = () => {
                         </span>
                       </div>
                     </div>
-                    <Badge variant={getScoreVariant(result.score, result.tests.total_questions)} className="self-start">
+                    <Badge variant={getScoreVariant(result.score, total)} className="self-start">
                       {percentage}%
                     </Badge>
                   </div>
@@ -112,7 +113,7 @@ const Results = () => {
                   <div className="flex items-center gap-2">
                     <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                     <span className="text-sm sm:text-lg font-semibold">
-                      {result.score} / {result.tests.total_questions}
+                      {result.score} / {total}
                     </span>
                     <span className="text-xs sm:text-sm text-muted-foreground">correct answers</span>
                   </div>
