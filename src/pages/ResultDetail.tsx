@@ -44,7 +44,7 @@ const ResultDetail = () => {
       .select(`id, score, tests (title, total_questions)`)
       .eq('id', resultId)
       .eq('user_id', user!.id)
-      .single();
+      .maybeSingle();
 
     if (!error && data) {
       setResult(data as any);
