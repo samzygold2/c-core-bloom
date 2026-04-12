@@ -81,7 +81,7 @@ const ResultDetail = () => {
   const passed = parseFloat(percentage) >= 60;
 
   return (
-    <DashboardLayout title="Test Results" subtitle={result.tests.title}>
+    <DashboardLayout title="Test Results" subtitle={testTitle}>
       <div className="max-w-2xl mx-auto">
         <Card className="text-center">
           <CardHeader className="p-4 sm:p-6">
@@ -96,7 +96,7 @@ const ResultDetail = () => {
                 </div>
               )}
             </div>
-            <CardTitle className="text-xl sm:text-3xl mb-2">{result.tests.title}</CardTitle>
+            <CardTitle className="text-xl sm:text-3xl mb-2">{testTitle}</CardTitle>
             <Badge variant={passed ? 'default' : 'secondary'}>
               {passed ? 'Passed' : 'Keep Practicing'}
             </Badge>
@@ -114,7 +114,7 @@ const ResultDetail = () => {
               </div>
               <div className="rounded-lg border p-3 sm:p-4">
                 <div className="text-xl sm:text-2xl font-bold text-destructive">
-                  {result.tests.total_questions - result.score}
+                  {total - result.score}
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Incorrect Answers</p>
               </div>
