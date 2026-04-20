@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, Edit, Link as LinkIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Test {
@@ -101,6 +101,29 @@ export const TestManager = () => {
     }
   };
 
+  const handleCopyLink = async (testId: string, testTitle: string) => {
+    const link = `${window.location.origin}/test/${testId}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast({
+        title: 'Link copied',
+        description: `Share link for "${testTitle}" copied to clipboard`,
+      });
+    } catch {
+      // Fallback for browsers without clipboard API
+      const input = document.createElement('input');
+      input.value = link;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      toast({
+        title: 'Link copied',
+        description: `Share link for "${testTitle}" copied to clipboard`,
+      });
+    }
+  };
+
   const handleDelete = async (testId: string) => {
     if (!confirm('Are you sure? This will also delete all questions in this test.')) {
       return;
@@ -191,6 +214,15 @@ export const TestManager = () => {
                     checked={test.is_active}
                     onCheckedChange={() => handleToggleActive(test.id, test.is_active)}
                   />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopyLink(test.id, test.title)}
+                    title="Copy share link"
+                    disabled={!test.is_active}
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="destructive"
                     size="icon"
