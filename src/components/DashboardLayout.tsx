@@ -28,8 +28,8 @@ export function DashboardLayout({ children, title, subtitle, headerActions }: Da
               )}
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-6 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-            {children}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+            <div className="mx-auto w-full max-w-7xl">{children}</div>
           </main>
         </div>
       </div>
