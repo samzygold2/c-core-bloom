@@ -35,14 +35,16 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar className="border-r">
+    <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="p-4 border-b">
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-6 w-6 text-primary" />
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold leading-tight truncate">CBT Platform</h2>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-          </div>
+        <div className="flex items-center gap-2 min-w-0">
+          <BookOpen className="h-6 w-6 text-primary shrink-0" />
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-bold leading-tight truncate">CBT Platform</h2>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
