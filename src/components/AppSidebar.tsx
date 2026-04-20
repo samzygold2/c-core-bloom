@@ -58,14 +58,14 @@ export function AppSidebar() {
               <SidebarMenu>
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild tooltip={item.title}>
                       <NavLink
                         to={item.url}
                         className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
-                        <span>{item.title}</span>
+                        {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -76,14 +76,16 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-1">
-            Main
-          </SidebarGroupLabel>
+          {!collapsed && (
+            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-1">
+              Main
+            </SidebarGroupLabel>
+          )}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
                       end
@@ -91,7 +93,7 @@ export function AppSidebar() {
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      <span>{item.title}</span>
+                      {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -102,15 +104,16 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3 border-t space-y-2">
-        <UserSettingsDialog triggerVariant="sidebar" />
+        {!collapsed && <UserSettingsDialog triggerVariant="sidebar" />}
         <Button
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
           onClick={signOut}
+          title="Logout"
         >
-          <LogOut className="h-4 w-4" />
-          <span>Logout</span>
+          <LogOut className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Logout</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>
