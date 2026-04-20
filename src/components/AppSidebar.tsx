@@ -51,9 +51,11 @@ export function AppSidebar() {
       <SidebarContent className="px-2 py-4">
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-1">
-              Administration
-            </SidebarGroupLabel>
+            {!collapsed && (
+              <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-1">
+                Administration
+              </SidebarGroupLabel>
+            )}
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
