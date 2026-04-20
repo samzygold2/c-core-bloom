@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
   SidebarHeader,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
 import { BookOpen, BarChart3, Settings, Shield, LogOut, Home } from 'lucide-react';
@@ -21,6 +22,8 @@ export function AppSidebar() {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { state } = useSidebar();
+  const collapsed = state === 'collapsed';
 
   const mainItems = [
     { title: 'Dashboard', url: '/dashboard', icon: Home },
