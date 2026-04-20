@@ -222,8 +222,8 @@ const TestTaking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-3 sm:p-4">
-      <div className="container mx-auto max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-3 sm:p-4 lg:p-6">
+      <div className="container mx-auto max-w-3xl lg:max-w-4xl">
         <div className="mb-3 sm:mb-4">
           <BackButton to="/dashboard" label="Exit Test" />
         </div>
