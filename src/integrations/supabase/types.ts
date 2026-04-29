@@ -283,6 +283,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_admins: {
+        Row: {
+          admin_id: string
+          approved_at: string | null
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_id: string
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

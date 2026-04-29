@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Search, UserMinus, User, Mail, Calendar, Clock, UserPlus, UserCheck, UserX } from 'lucide-react';
+import { Search, UserMinus, User, Mail, Calendar, Clock, UserPlus, UserCheck, UserX, Link as LinkIcon } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface UserProfile {
@@ -21,11 +21,20 @@ interface UserProfile {
   is_pending: boolean;
 }
 
+interface AdminLinkRequest {
+  id: string; // user_admins row id
+  user_id: string;
+  status: string;
+  user: UserProfile;
+}
+
 export const AssignedUsersManager = () => {
   const [assignedUsers, setAssignedUsers] = useState<UserProfile[]>([]);
   const [waitingUsers, setWaitingUsers] = useState<UserProfile[]>([]);
   const [pendingUsers, setPendingUsers] = useState<UserProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'assigned' | 'waiting'>('pending');
+  const [linkRequests, setLinkRequests] = useState<AdminLinkRequest[]>([]);
+  const [approvedLinks, setApprovedLinks] = useState<AdminLinkRequest[]>([]);
+  const [activeTab, setActiveTab] = useState<'pending' | 'assigned' | 'waiting' | 'links'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
@@ -86,7 +95,101 @@ export const AssignedUsersManager = () => {
       setWaitingUsers(waiting || []);
     }
 
+    // Fetch additional admin link requests (multi-admin) pointing to this admin
+    const { data: links, error: linksError } = await supabase
+      .from('user_admins')
+      .select('id, user_id, status')
+      .eq('admin_id', user.id);
+
+    if (linksError) {
+      console.error('Error fetching admin links:', linksError);
+      setLinkRequests([]);
+      setApprovedLinks([]);
+    } else if (links && links.length > 0) {
+      const userIds = links.map((l) => l.user_id);
+      const { data: linkProfiles } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname, email, created_at, assigned_admin_id, is_waiting, is_pending')
+        .in('id', userIds);
+
+      const profileMap = new Map((linkProfiles || []).map((p) => [p.id, p]));
+      const enriched: AdminLinkRequest[] = links
+        .map((l) => {
+          const u = profileMap.get(l.user_id);
+          if (!u) return null;
+          return { id: l.id, user_id: l.user_id, status: l.status, user: u as UserProfile };
+        })
+        .filter((x): x is AdminLinkRequest => x !== null)
+        // Hide rows that are just mirroring the primary assignment (already shown in other tabs)
+        .filter((x) => x.user.assigned_admin_id !== user.id);
+
+      setLinkRequests(enriched.filter((x) => x.status === 'pending'));
+      setApprovedLinks(enriched.filter((x) => x.status === 'approved'));
+    } else {
+      setLinkRequests([]);
+      setApprovedLinks([]);
+    }
+
     setLoading(false);
+  };
+
+  const handleApproveLink = async (req: AdminLinkRequest) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_admins')
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
+      .eq('id', req.id)
+      .eq('admin_id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to approve link request.', variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: 'Link Approved',
+      description: `${req.user.firstname} ${req.user.lastname} can now see your tests.`,
+    });
+    await supabase.from('audit_log').insert({
+      admin_id: user.id,
+      action: `Approved admin link for ${req.user.firstname} ${req.user.lastname}`,
+    });
+    fetchUsers();
+  };
+
+  const handleRejectLink = async (req: AdminLinkRequest) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_admins')
+      .delete()
+      .eq('id', req.id)
+      .eq('admin_id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to reject link request.', variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: 'Link Rejected',
+      description: `Request from ${req.user.firstname} ${req.user.lastname} dismissed.`,
+    });
+    await supabase.from('audit_log').insert({
+      admin_id: user.id,
+      action: `Rejected admin link from ${req.user.firstname} ${req.user.lastname}`,
+    });
+    fetchUsers();
+  };
+
+  const handleRemoveLink = async (req: AdminLinkRequest) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_admins')
+      .delete()
+      .eq('id', req.id)
+      .eq('admin_id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to remove link.', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Link Removed', description: 'User can no longer see your tests via this link.' });
+    fetchUsers();
   };
 
   const handleRemoveUser = (userProfile: UserProfile) => {
@@ -399,7 +502,7 @@ export const AssignedUsersManager = () => {
       <Tabs
         value={activeTab}
         onValueChange={(v) => {
-          if (v === 'pending' || v === 'assigned' || v === 'waiting') setActiveTab(v);
+          if (v === 'pending' || v === 'assigned' || v === 'waiting' || v === 'links') setActiveTab(v);
         }}
         className="space-y-4"
       >
@@ -409,6 +512,9 @@ export const AssignedUsersManager = () => {
           </TabsTrigger>
           <TabsTrigger value="assigned" className="flex-1 min-w-[100px] text-xs sm:text-sm">
             My Users ({assignedUsers.length})
+          </TabsTrigger>
+          <TabsTrigger value="links" className="flex-1 min-w-[100px] text-xs sm:text-sm">
+            Link Requests ({linkRequests.length})
           </TabsTrigger>
           <TabsTrigger value="waiting" className="flex-1 min-w-[100px] text-xs sm:text-sm">
             Waiting List ({waitingUsers.length})
@@ -443,6 +549,67 @@ export const AssignedUsersManager = () => {
           )}
         </TabsContent>
 
+        <TabsContent value="links" className="space-y-4">
+          {linkRequests.length === 0 && approvedLinks.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <LinkIcon className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                No additional admin links yet. Users who add you as an extra admin will appear here.
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {linkRequests.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Pending Requests</h4>
+                  {linkRequests.map((req) => (
+                    <Card key={req.id}>
+                      <CardContent className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-sm">{req.user.firstname} {req.user.lastname}</p>
+                          <p className="text-xs text-muted-foreground break-all">{req.user.email}</p>
+                          <Badge variant="outline" className="mt-1 gap-1 border-amber-500 text-amber-600">
+                            <Clock className="h-3 w-3" /> Pending link approval
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleApproveLink(req)} className="gap-1">
+                            <UserCheck className="h-4 w-4" /> Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleRejectLink(req)} className="gap-1">
+                            <UserX className="h-4 w-4" /> Reject
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              {approvedLinks.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Approved Links</h4>
+                  {approvedLinks.map((req) => (
+                    <Card key={req.id}>
+                      <CardContent className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-sm">{req.user.firstname} {req.user.lastname}</p>
+                          <p className="text-xs text-muted-foreground break-all">{req.user.email}</p>
+                          <Badge variant="secondary" className="mt-1 gap-1">
+                            <LinkIcon className="h-3 w-3" /> Linked (secondary)
+                          </Badge>
+                        </div>
+                        <Button size="sm" variant="destructive" onClick={() => handleRemoveLink(req)} className="gap-1">
+                          <UserMinus className="h-4 w-4" /> Remove Link
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+
         <TabsContent value="waiting" className="space-y-4">
           {filteredWaiting.length === 0 ? (
             <Card>
@@ -457,6 +624,7 @@ export const AssignedUsersManager = () => {
           )}
         </TabsContent>
       </Tabs>
+
 
       {/* Remove User Dialog */}
       <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
