@@ -32,7 +32,9 @@ export const AssignedUsersManager = () => {
   const [assignedUsers, setAssignedUsers] = useState<UserProfile[]>([]);
   const [waitingUsers, setWaitingUsers] = useState<UserProfile[]>([]);
   const [pendingUsers, setPendingUsers] = useState<UserProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'assigned' | 'waiting'>('pending');
+  const [linkRequests, setLinkRequests] = useState<AdminLinkRequest[]>([]);
+  const [approvedLinks, setApprovedLinks] = useState<AdminLinkRequest[]>([]);
+  const [activeTab, setActiveTab] = useState<'pending' | 'assigned' | 'waiting' | 'links'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
