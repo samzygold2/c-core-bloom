@@ -92,7 +92,7 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
       .eq('id', user!.id)
       .single();
 
-    const list: AdminLink[] = links || [];
+    const list: AdminLink[] = (links || []).map((l) => ({ ...l, isPrimary: false }));
 
     // Ensure primary admin is represented in the list (even if not in user_admins yet)
     if (profile?.assigned_admin_id && !list.find((l) => l.admin_id === profile.assigned_admin_id)) {
