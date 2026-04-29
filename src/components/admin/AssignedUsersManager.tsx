@@ -502,7 +502,7 @@ export const AssignedUsersManager = () => {
       <Tabs
         value={activeTab}
         onValueChange={(v) => {
-          if (v === 'pending' || v === 'assigned' || v === 'waiting') setActiveTab(v);
+          if (v === 'pending' || v === 'assigned' || v === 'waiting' || v === 'links') setActiveTab(v);
         }}
         className="space-y-4"
       >
@@ -512,6 +512,9 @@ export const AssignedUsersManager = () => {
           </TabsTrigger>
           <TabsTrigger value="assigned" className="flex-1 min-w-[100px] text-xs sm:text-sm">
             My Users ({assignedUsers.length})
+          </TabsTrigger>
+          <TabsTrigger value="links" className="flex-1 min-w-[100px] text-xs sm:text-sm">
+            Link Requests ({linkRequests.length})
           </TabsTrigger>
           <TabsTrigger value="waiting" className="flex-1 min-w-[100px] text-xs sm:text-sm">
             Waiting List ({waitingUsers.length})
@@ -546,6 +549,67 @@ export const AssignedUsersManager = () => {
           )}
         </TabsContent>
 
+        <TabsContent value="links" className="space-y-4">
+          {linkRequests.length === 0 && approvedLinks.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <LinkIcon className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                No additional admin links yet. Users who add you as an extra admin will appear here.
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {linkRequests.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Pending Requests</h4>
+                  {linkRequests.map((req) => (
+                    <Card key={req.id}>
+                      <CardContent className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-sm">{req.user.firstname} {req.user.lastname}</p>
+                          <p className="text-xs text-muted-foreground break-all">{req.user.email}</p>
+                          <Badge variant="outline" className="mt-1 gap-1 border-amber-500 text-amber-600">
+                            <Clock className="h-3 w-3" /> Pending link approval
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleApproveLink(req)} className="gap-1">
+                            <UserCheck className="h-4 w-4" /> Approve
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleRejectLink(req)} className="gap-1">
+                            <UserX className="h-4 w-4" /> Reject
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              {approvedLinks.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Approved Links</h4>
+                  {approvedLinks.map((req) => (
+                    <Card key={req.id}>
+                      <CardContent className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-sm">{req.user.firstname} {req.user.lastname}</p>
+                          <p className="text-xs text-muted-foreground break-all">{req.user.email}</p>
+                          <Badge variant="secondary" className="mt-1 gap-1">
+                            <LinkIcon className="h-3 w-3" /> Linked (secondary)
+                          </Badge>
+                        </div>
+                        <Button size="sm" variant="destructive" onClick={() => handleRemoveLink(req)} className="gap-1">
+                          <UserMinus className="h-4 w-4" /> Remove Link
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </TabsContent>
+
         <TabsContent value="waiting" className="space-y-4">
           {filteredWaiting.length === 0 ? (
             <Card>
@@ -560,6 +624,7 @@ export const AssignedUsersManager = () => {
           )}
         </TabsContent>
       </Tabs>
+
 
       {/* Remove User Dialog */}
       <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
