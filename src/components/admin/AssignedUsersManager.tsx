@@ -21,6 +21,13 @@ interface UserProfile {
   is_pending: boolean;
 }
 
+interface AdminLinkRequest {
+  id: string; // user_admins row id
+  user_id: string;
+  status: string;
+  user: UserProfile;
+}
+
 export const AssignedUsersManager = () => {
   const [assignedUsers, setAssignedUsers] = useState<UserProfile[]>([]);
   const [waitingUsers, setWaitingUsers] = useState<UserProfile[]>([]);
