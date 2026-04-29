@@ -95,7 +95,101 @@ export const AssignedUsersManager = () => {
       setWaitingUsers(waiting || []);
     }
 
+    // Fetch additional admin link requests (multi-admin) pointing to this admin
+    const { data: links, error: linksError } = await supabase
+      .from('user_admins')
+      .select('id, user_id, status')
+      .eq('admin_id', user.id);
+
+    if (linksError) {
+      console.error('Error fetching admin links:', linksError);
+      setLinkRequests([]);
+      setApprovedLinks([]);
+    } else if (links && links.length > 0) {
+      const userIds = links.map((l) => l.user_id);
+      const { data: linkProfiles } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname, email, created_at, assigned_admin_id, is_waiting, is_pending')
+        .in('id', userIds);
+
+      const profileMap = new Map((linkProfiles || []).map((p) => [p.id, p]));
+      const enriched: AdminLinkRequest[] = links
+        .map((l) => {
+          const u = profileMap.get(l.user_id);
+          if (!u) return null;
+          return { id: l.id, user_id: l.user_id, status: l.status, user: u as UserProfile };
+        })
+        .filter((x): x is AdminLinkRequest => x !== null)
+        // Hide rows that are just mirroring the primary assignment (already shown in other tabs)
+        .filter((x) => x.user.assigned_admin_id !== user.id);
+
+      setLinkRequests(enriched.filter((x) => x.status === 'pending'));
+      setApprovedLinks(enriched.filter((x) => x.status === 'approved'));
+    } else {
+      setLinkRequests([]);
+      setApprovedLinks([]);
+    }
+
     setLoading(false);
+  };
+
+  const handleApproveLink = async (req: AdminLinkRequest) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_admins')
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
+      .eq('id', req.id)
+      .eq('admin_id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to approve link request.', variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: 'Link Approved',
+      description: `${req.user.firstname} ${req.user.lastname} can now see your tests.`,
+    });
+    await supabase.from('audit_log').insert({
+      admin_id: user.id,
+      action: `Approved admin link for ${req.user.firstname} ${req.user.lastname}`,
+    });
+    fetchUsers();
+  };
+
+  const handleRejectLink = async (req: AdminLinkRequest) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_admins')
+      .delete()
+      .eq('id', req.id)
+      .eq('admin_id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to reject link request.', variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: 'Link Rejected',
+      description: `Request from ${req.user.firstname} ${req.user.lastname} dismissed.`,
+    });
+    await supabase.from('audit_log').insert({
+      admin_id: user.id,
+      action: `Rejected admin link from ${req.user.firstname} ${req.user.lastname}`,
+    });
+    fetchUsers();
+  };
+
+  const handleRemoveLink = async (req: AdminLinkRequest) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('user_admins')
+      .delete()
+      .eq('id', req.id)
+      .eq('admin_id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to remove link.', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Link Removed', description: 'User can no longer see your tests via this link.' });
+    fetchUsers();
   };
 
   const handleRemoveUser = (userProfile: UserProfile) => {
