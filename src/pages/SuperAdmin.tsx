@@ -33,6 +33,7 @@ import {
 import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
 import AdminPasswordResetManager from '@/components/admin/AdminPasswordResetManager';
+import AdminActivityMonitor from '@/components/admin/AdminActivityMonitor';
 
 interface AuditLog {
   id: string;
