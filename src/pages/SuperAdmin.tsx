@@ -594,6 +594,10 @@ const SuperAdmin = () => {
               <BarChart3 className="h-4 w-4 mr-2" />
               Global Reports
             </TabsTrigger>
+            <TabsTrigger value="admin-activity" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <UserCog className="h-4 w-4 mr-2" />
+              Admin Activity
+            </TabsTrigger>
             <TabsTrigger value="audit" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Activity className="h-4 w-4 mr-2" />
               Audit Logs
