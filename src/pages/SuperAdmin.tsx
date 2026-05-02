@@ -33,6 +33,7 @@ import {
 import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
 import AdminPasswordResetManager from '@/components/admin/AdminPasswordResetManager';
+import AdminActivityMonitor from '@/components/admin/AdminActivityMonitor';
 
 interface AuditLog {
   id: string;
@@ -593,6 +594,10 @@ const SuperAdmin = () => {
               <BarChart3 className="h-4 w-4 mr-2" />
               Global Reports
             </TabsTrigger>
+            <TabsTrigger value="admin-activity" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <UserCog className="h-4 w-4 mr-2" />
+              Admin Activity
+            </TabsTrigger>
             <TabsTrigger value="audit" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Activity className="h-4 w-4 mr-2" />
               Audit Logs
@@ -782,6 +787,11 @@ const SuperAdmin = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Admin Activity Tab */}
+          <TabsContent value="admin-activity">
+            <AdminActivityMonitor />
           </TabsContent>
 
           {/* Audit Logs Tab */}
