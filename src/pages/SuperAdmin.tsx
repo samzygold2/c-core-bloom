@@ -789,6 +789,11 @@ const SuperAdmin = () => {
             </Card>
           </TabsContent>
 
+          {/* Admin Activity Tab */}
+          <TabsContent value="admin-activity">
+            <AdminActivityMonitor />
+          </TabsContent>
+
           {/* Audit Logs Tab */}
           <TabsContent value="audit">
             <Card className="bg-white border-blue-100 shadow-sm">
