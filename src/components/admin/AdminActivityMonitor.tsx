@@ -614,6 +614,27 @@ const AdminActivityMonitor = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!confirmUser} onOpenChange={(open) => !open && setConfirmUser(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {confirmUser?.is_active ? 'Deactivate user?' : 'Activate user?'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmUser?.is_active
+                  ? `${confirmUser?.firstname} ${confirmUser?.lastname} will lose access until reactivated.`
+                  : `${confirmUser?.firstname} ${confirmUser?.lastname} will regain access.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => confirmUser && toggleUserActive(confirmUser)}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
