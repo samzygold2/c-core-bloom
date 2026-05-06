@@ -14,8 +14,12 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Activity, FileText, HelpCircle, Users as UsersIcon, Clock, Eye, RefreshCw, Search,
+  Activity, FileText, HelpCircle, Users as UsersIcon, Clock, Eye, RefreshCw, Search, UserX, UserCheck,
 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AdminProfile {
   id: string;
