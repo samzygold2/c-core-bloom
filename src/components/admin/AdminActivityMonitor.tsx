@@ -55,6 +55,16 @@ interface AdminAuditEntry {
   timestamp: string | null;
 }
 
+interface AssignedUser {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  username: string | null;
+  is_active: boolean;
+  link_type: 'primary' | 'linked';
+}
+
 interface AdminStats {
   testCount: number;
   questionCount: number;
