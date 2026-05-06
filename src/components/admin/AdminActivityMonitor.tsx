@@ -356,17 +356,21 @@ const AdminActivityMonitor = () => {
             </div>
 
             <Tabs defaultValue="tests" className="space-y-4">
-              <TabsList className="bg-blue-50 border border-blue-100">
+              <TabsList className="bg-blue-50 border border-blue-100 flex-wrap h-auto">
                 <TabsTrigger value="tests" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Tests ({tests.length})
                 </TabsTrigger>
                 <TabsTrigger value="questions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Questions ({questions.length})
                 </TabsTrigger>
+                <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Users ({assignedUsers.length})
+                </TabsTrigger>
                 <TabsTrigger value="actions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Actions ({auditEntries.length})
                 </TabsTrigger>
               </TabsList>
+
 
               <TabsContent value="tests">
                 <div className="rounded-lg border border-blue-100 overflow-hidden">
