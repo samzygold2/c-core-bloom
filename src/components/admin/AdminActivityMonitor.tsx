@@ -467,7 +467,70 @@ const AdminActivityMonitor = () => {
                 </div>
               </TabsContent>
 
-              <TabsContent value="actions">
+              <TabsContent value="users">
+                <div className="rounded-lg border border-blue-100 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50 hover:bg-blue-50">
+                        <TableHead>Name</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Link</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assignedUsers.map((u) => (
+                        <TableRow key={`${u.id}-${u.link_type}`} className="border-blue-50 hover:bg-blue-50/50">
+                          <TableCell className="font-medium text-slate-800">
+                            {u.firstname} {u.lastname}
+                          </TableCell>
+                          <TableCell className="text-slate-600">{u.username || '—'}</TableCell>
+                          <TableCell className="text-slate-600">{u.email}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {u.link_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={u.is_active ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}>
+                              {u.is_active ? 'Active' : 'Deactivated'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setConfirmUser(u)}
+                              className={
+                                u.is_active
+                                  ? 'border-rose-300 text-rose-600 hover:bg-rose-50'
+                                  : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50'
+                              }
+                            >
+                              {u.is_active ? (
+                                <><UserX className="h-3 w-3 mr-1" /> Deactivate</>
+                              ) : (
+                                <><UserCheck className="h-3 w-3 mr-1" /> Activate</>
+                              )}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {assignedUsers.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-slate-400 py-8">
+                            No assigned users
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+
                 <div className="rounded-lg border border-blue-100 overflow-hidden">
                   <Table>
                     <TableHeader>
