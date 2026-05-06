@@ -102,6 +102,7 @@ export type Database = {
           email: string
           firstname: string
           id: string
+          is_active: boolean
           is_pending: boolean | null
           is_waiting: boolean | null
           lastname: string
@@ -113,6 +114,7 @@ export type Database = {
           email: string
           firstname?: string
           id: string
+          is_active?: boolean
           is_pending?: boolean | null
           is_waiting?: boolean | null
           lastname?: string
@@ -124,6 +126,7 @@ export type Database = {
           email?: string
           firstname?: string
           id?: string
+          is_active?: boolean
           is_pending?: boolean | null
           is_waiting?: boolean | null
           lastname?: string

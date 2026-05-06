@@ -14,8 +14,12 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Activity, FileText, HelpCircle, Users as UsersIcon, Clock, Eye, RefreshCw, Search,
+  Activity, FileText, HelpCircle, Users as UsersIcon, Clock, Eye, RefreshCw, Search, UserX, UserCheck,
 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AdminProfile {
   id: string;
@@ -51,6 +55,16 @@ interface AdminAuditEntry {
   timestamp: string | null;
 }
 
+interface AssignedUser {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  username: string | null;
+  is_active: boolean;
+  link_type: 'primary' | 'linked';
+}
+
 interface AdminStats {
   testCount: number;
   questionCount: number;
@@ -74,6 +88,8 @@ const AdminActivityMonitor = () => {
   const [questions, setQuestions] = useState<AdminQuestion[]>([]);
   const [auditEntries, setAuditEntries] = useState<AdminAuditEntry[]>([]);
   const [viewQuestion, setViewQuestion] = useState<AdminQuestion | null>(null);
+  const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
+  const [confirmUser, setConfirmUser] = useState<AssignedUser | null>(null);
 
   useEffect(() => {
     loadAdmins();
@@ -119,8 +135,8 @@ const AdminActivityMonitor = () => {
       { data: testsData },
       { data: questionsData },
       { data: auditData },
-      { count: assignedPrimary },
-      { count: assignedLinked },
+      { data: primaryUsers },
+      { data: linkedRows },
       { count: reviewedCount },
     ] = await Promise.all([
       supabase
@@ -142,11 +158,11 @@ const AdminActivityMonitor = () => {
         .limit(100),
       supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true })
+        .select('id, firstname, lastname, email, username, is_active')
         .eq('assigned_admin_id', adminId),
       supabase
         .from('user_admins')
-        .select('*', { count: 'exact', head: true })
+        .select('user_id')
         .eq('admin_id', adminId)
         .eq('status', 'approved'),
       supabase
@@ -163,15 +179,58 @@ const AdminActivityMonitor = () => {
       test_title: titleById.get(q.test_id) || 'Unknown',
     })) as AdminQuestion[];
 
+    const primaryList: AssignedUser[] = (primaryUsers || []).map((u: any) => ({
+      ...u,
+      is_active: u.is_active ?? true,
+      link_type: 'primary' as const,
+    }));
+    const primaryIds = new Set(primaryList.map((u) => u.id));
+    const linkedIds = (linkedRows || [])
+      .map((r: any) => r.user_id)
+      .filter((id: string) => !primaryIds.has(id));
+
+    let linkedList: AssignedUser[] = [];
+    if (linkedIds.length > 0) {
+      const { data: linkedProfiles } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname, email, username, is_active')
+        .in('id', linkedIds);
+      linkedList = (linkedProfiles || []).map((u: any) => ({
+        ...u,
+        is_active: u.is_active ?? true,
+        link_type: 'linked' as const,
+      }));
+    }
+
+    const allUsers = [...primaryList, ...linkedList];
     setTests(testList);
     setQuestions(enrichedQuestions);
     setAuditEntries((auditData || []) as AdminAuditEntry[]);
+    setAssignedUsers(allUsers);
     setStats({
       testCount: testList.length,
       questionCount: enrichedQuestions.length,
-      assignedUserCount: (assignedPrimary || 0) + (assignedLinked || 0),
+      assignedUserCount: allUsers.length,
       reviewedQuestionCount: reviewedCount || 0,
     });
+  };
+
+  const toggleUserActive = async (user: AssignedUser) => {
+    const newStatus = !user.is_active;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_active: newStatus })
+      .eq('id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: newStatus ? 'User activated' : 'User deactivated',
+      description: `${user.firstname} ${user.lastname} is now ${newStatus ? 'active' : 'deactivated'}.`,
+    });
+    setAssignedUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, is_active: newStatus } : u)));
+    setConfirmUser(null);
   };
 
   const filteredAdmins = admins.filter((a) => {
@@ -297,17 +356,21 @@ const AdminActivityMonitor = () => {
             </div>
 
             <Tabs defaultValue="tests" className="space-y-4">
-              <TabsList className="bg-blue-50 border border-blue-100">
+              <TabsList className="bg-blue-50 border border-blue-100 flex-wrap h-auto">
                 <TabsTrigger value="tests" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Tests ({tests.length})
                 </TabsTrigger>
                 <TabsTrigger value="questions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Questions ({questions.length})
                 </TabsTrigger>
+                <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Users ({assignedUsers.length})
+                </TabsTrigger>
                 <TabsTrigger value="actions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                   Actions ({auditEntries.length})
                 </TabsTrigger>
               </TabsList>
+
 
               <TabsContent value="tests">
                 <div className="rounded-lg border border-blue-100 overflow-hidden">
@@ -404,6 +467,69 @@ const AdminActivityMonitor = () => {
                 </div>
               </TabsContent>
 
+              <TabsContent value="users">
+                <div className="rounded-lg border border-blue-100 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-blue-50 hover:bg-blue-50">
+                        <TableHead>Name</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Link</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assignedUsers.map((u) => (
+                        <TableRow key={`${u.id}-${u.link_type}`} className="border-blue-50 hover:bg-blue-50/50">
+                          <TableCell className="font-medium text-slate-800">
+                            {u.firstname} {u.lastname}
+                          </TableCell>
+                          <TableCell className="text-slate-600">{u.username || '—'}</TableCell>
+                          <TableCell className="text-slate-600">{u.email}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {u.link_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={u.is_active ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}>
+                              {u.is_active ? 'Active' : 'Deactivated'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setConfirmUser(u)}
+                              className={
+                                u.is_active
+                                  ? 'border-rose-300 text-rose-600 hover:bg-rose-50'
+                                  : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50'
+                              }
+                            >
+                              {u.is_active ? (
+                                <><UserX className="h-3 w-3 mr-1" /> Deactivate</>
+                              ) : (
+                                <><UserCheck className="h-3 w-3 mr-1" /> Activate</>
+                              )}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {assignedUsers.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-slate-400 py-8">
+                            No assigned users
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
               <TabsContent value="actions">
                 <div className="rounded-lg border border-blue-100 overflow-hidden">
                   <Table>
@@ -488,6 +614,27 @@ const AdminActivityMonitor = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!confirmUser} onOpenChange={(open) => !open && setConfirmUser(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {confirmUser?.is_active ? 'Deactivate user?' : 'Activate user?'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmUser?.is_active
+                  ? `${confirmUser?.firstname} ${confirmUser?.lastname} will lose access until reactivated.`
+                  : `${confirmUser?.firstname} ${confirmUser?.lastname} will regain access.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => confirmUser && toggleUserActive(confirmUser)}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
