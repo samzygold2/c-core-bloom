@@ -135,8 +135,8 @@ const AdminActivityMonitor = () => {
       { data: testsData },
       { data: questionsData },
       { data: auditData },
-      { count: assignedPrimary },
-      { count: assignedLinked },
+      { data: primaryUsers },
+      { data: linkedRows },
       { count: reviewedCount },
     ] = await Promise.all([
       supabase
@@ -158,11 +158,11 @@ const AdminActivityMonitor = () => {
         .limit(100),
       supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true })
+        .select('id, firstname, lastname, email, username, is_active')
         .eq('assigned_admin_id', adminId),
       supabase
         .from('user_admins')
-        .select('*', { count: 'exact', head: true })
+        .select('user_id')
         .eq('admin_id', adminId)
         .eq('status', 'approved'),
       supabase
@@ -179,15 +179,58 @@ const AdminActivityMonitor = () => {
       test_title: titleById.get(q.test_id) || 'Unknown',
     })) as AdminQuestion[];
 
+    const primaryList: AssignedUser[] = (primaryUsers || []).map((u: any) => ({
+      ...u,
+      is_active: u.is_active ?? true,
+      link_type: 'primary' as const,
+    }));
+    const primaryIds = new Set(primaryList.map((u) => u.id));
+    const linkedIds = (linkedRows || [])
+      .map((r: any) => r.user_id)
+      .filter((id: string) => !primaryIds.has(id));
+
+    let linkedList: AssignedUser[] = [];
+    if (linkedIds.length > 0) {
+      const { data: linkedProfiles } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname, email, username, is_active')
+        .in('id', linkedIds);
+      linkedList = (linkedProfiles || []).map((u: any) => ({
+        ...u,
+        is_active: u.is_active ?? true,
+        link_type: 'linked' as const,
+      }));
+    }
+
+    const allUsers = [...primaryList, ...linkedList];
     setTests(testList);
     setQuestions(enrichedQuestions);
     setAuditEntries((auditData || []) as AdminAuditEntry[]);
+    setAssignedUsers(allUsers);
     setStats({
       testCount: testList.length,
       questionCount: enrichedQuestions.length,
-      assignedUserCount: (assignedPrimary || 0) + (assignedLinked || 0),
+      assignedUserCount: allUsers.length,
       reviewedQuestionCount: reviewedCount || 0,
     });
+  };
+
+  const toggleUserActive = async (user: AssignedUser) => {
+    const newStatus = !user.is_active;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_active: newStatus })
+      .eq('id', user.id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: newStatus ? 'User activated' : 'User deactivated',
+      description: `${user.firstname} ${user.lastname} is now ${newStatus ? 'active' : 'deactivated'}.`,
+    });
+    setAssignedUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, is_active: newStatus } : u)));
+    setConfirmUser(null);
   };
 
   const filteredAdmins = admins.filter((a) => {
