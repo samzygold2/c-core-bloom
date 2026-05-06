@@ -530,7 +530,7 @@ const AdminActivityMonitor = () => {
                 </div>
               </TabsContent>
 
-
+              <TabsContent value="actions">
                 <div className="rounded-lg border border-blue-100 overflow-hidden">
                   <Table>
                     <TableHeader>
