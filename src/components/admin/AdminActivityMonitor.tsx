@@ -88,6 +88,8 @@ const AdminActivityMonitor = () => {
   const [questions, setQuestions] = useState<AdminQuestion[]>([]);
   const [auditEntries, setAuditEntries] = useState<AdminAuditEntry[]>([]);
   const [viewQuestion, setViewQuestion] = useState<AdminQuestion | null>(null);
+  const [assignedUsers, setAssignedUsers] = useState<AssignedUser[]>([]);
+  const [confirmUser, setConfirmUser] = useState<AssignedUser | null>(null);
 
   useEffect(() => {
     loadAdmins();
