@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Users can update their own test sessions" ON public.user_tests;
