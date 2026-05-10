@@ -615,6 +615,7 @@ const SuperAdmin = () => {
               Admin OTP
             </TabsTrigger>
           </TabsList>
+          </div>
 
           {/* Users Tab */}
           <TabsContent value="users">
