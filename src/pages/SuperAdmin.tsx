@@ -585,7 +585,9 @@ const SuperAdmin = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="bg-white border border-blue-200 shadow-sm">
+          <div className="overflow-x-auto -mx-4 px-4 pb-1">
+          <TabsList className="bg-white border border-blue-200 shadow-sm w-max flex">
+
             <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Users className="h-4 w-4 mr-2" />
               User Management
