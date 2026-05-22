@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar,
   SidebarContent,
@@ -14,8 +16,9 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
-import { BookOpen, BarChart3, Settings, Shield, LogOut, Home } from 'lucide-react';
+import { BarChart3, Settings, Shield, LogOut, Home, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { UserSettingsDialog } from '@/components/UserSettingsDialog';
 
 export function AppSidebar() {
@@ -24,6 +27,30 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
+
+  const [profile, setProfile] = useState<{ firstname: string; lastname: string; avatar_url: string | null }>({
+    firstname: '',
+    lastname: '',
+    avatar_url: null,
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .select('firstname, lastname, avatar_url')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setProfile(data as any);
+      });
+  }, [user]);
+
+  const displayName =
+    `${profile.firstname || ''} ${profile.lastname || ''}`.trim() || user?.email?.split('@')[0] || 'User';
+  const initials =
+    `${profile.firstname?.[0] || ''}${profile.lastname?.[0] || ''}`.toUpperCase() ||
+    (user?.email?.[0] || 'U').toUpperCase();
 
   const mainItems = [
     { title: 'Dashboard', url: '/dashboard', icon: Home },
@@ -37,12 +64,17 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="p-4 border-b">
-        <div className="flex items-center gap-2 min-w-0">
-          <BookOpen className="h-6 w-6 text-primary shrink-0" />
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="h-9 w-9 shrink-0 border border-border">
+            <AvatarImage src={profile.avatar_url || undefined} alt={displayName} />
+            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+              {initials || <UserIcon className="h-4 w-4" />}
+            </AvatarFallback>
+          </Avatar>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-bold leading-tight truncate">CBT Platform</h2>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              <h2 className="text-sm font-semibold leading-tight truncate">{displayName}</h2>
+              <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
             </div>
           )}
         </div>
