@@ -98,7 +98,9 @@ export type Database = {
       profiles: {
         Row: {
           assigned_admin_id: string | null
+          avatar_url: string | null
           created_at: string | null
+          description: string | null
           email: string
           firstname: string
           id: string
@@ -110,7 +112,9 @@ export type Database = {
         }
         Insert: {
           assigned_admin_id?: string | null
+          avatar_url?: string | null
           created_at?: string | null
+          description?: string | null
           email: string
           firstname?: string
           id: string
@@ -122,7 +126,9 @@ export type Database = {
         }
         Update: {
           assigned_admin_id?: string | null
+          avatar_url?: string | null
           created_at?: string | null
+          description?: string | null
           email?: string
           firstname?: string
           id?: string
