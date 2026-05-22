@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Plus, Trash2, Clock, CheckCircle2, Star } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Settings, Plus, Trash2, Clock, CheckCircle2, Star, Upload, User as UserIcon } from 'lucide-react';
 
 interface AdminProfile {
   id: string;
@@ -25,10 +27,42 @@ interface AdminLink {
   admin?: AdminProfile;
 }
 
+// Resize an image file to a 500x500 JPEG/PNG blob via canvas
+const resizeImage = (file: File): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 500;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas not supported'));
+        // Cover-fit: crop center square then scale
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, 500, 500);
+        const isPng = file.type === 'image/png';
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Resize failed'))),
+          isPng ? 'image/png' : 'image/jpeg',
+          0.9,
+        );
+      };
+      img.onerror = () => reject(new Error('Invalid image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Read failed'));
+    reader.readAsDataURL(file);
+  });
+
 export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVariant?: 'default' | 'sidebar' }) => {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Admin management state (regular users)
   const [allAdmins, setAllAdmins] = useState<AdminProfile[]>([]);
@@ -36,9 +70,12 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
   const [primaryAdminId, setPrimaryAdminId] = useState<string>('');
   const [adminToAdd, setAdminToAdd] = useState<string>('');
 
-  // Name change state
+  // Profile state
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
+  const [description, setDescription] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
 
   // Password change state
   const [newPassword, setNewPassword] = useState('');
@@ -59,13 +96,15 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
   const fetchProfile = async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('firstname, lastname, assigned_admin_id')
+      .select('firstname, lastname, assigned_admin_id, avatar_url, description')
       .eq('id', user!.id)
       .single();
     if (data) {
       setFirstname(data.firstname || '');
       setLastname(data.lastname || '');
       setPrimaryAdminId(data.assigned_admin_id || '');
+      setAvatarUrl((data as any).avatar_url || '');
+      setDescription((data as any).description || '');
     }
   };
 
@@ -94,7 +133,6 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
 
     const list: AdminLink[] = (links || []).map((l) => ({ ...l, isPrimary: false }));
 
-    // Ensure primary admin is represented in the list (even if not in user_admins yet)
     if (profile?.assigned_admin_id && !list.find((l) => l.admin_id === profile.assigned_admin_id)) {
       list.unshift({
         id: 'primary',
@@ -111,19 +149,68 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
     setAdminLinks(list);
   };
 
-  const handleChangeName = async () => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+      toast({ title: 'Invalid format', description: 'Only JPG and PNG images are allowed.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Please upload an image under 10MB.', variant: 'destructive' });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const blob = await resizeImage(file);
+      const ext = file.type === 'image/png' ? 'png' : 'jpg';
+      const filePath = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { upsert: true, contentType: `image/${ext}` });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl } as any)
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast({ title: 'Profile picture updated', description: 'Your new photo is saved.' });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message || 'Try again.', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSaveProfile = async () => {
     if (!user || !firstname.trim() || !lastname.trim()) return;
     setLoading(true);
     const { error } = await supabase
       .from('profiles')
-      .update({ firstname: firstname.trim(), lastname: lastname.trim() })
+      .update({
+        firstname: firstname.trim(),
+        lastname: lastname.trim(),
+        description: description.trim(),
+      } as any)
       .eq('id', user.id);
     setLoading(false);
     if (error) {
-      toast({ title: 'Error', description: 'Failed to update name.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to update profile.', variant: 'destructive' });
       return;
     }
-    toast({ title: 'Name Updated', description: 'Your name has been changed successfully.' });
+    toast({ title: 'Profile Updated', description: 'Your profile has been saved.' });
   };
 
   const handleChangePassword = async () => {
@@ -223,6 +310,8 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
     (a) => !adminLinks.find((l) => l.admin_id === a.id)
   );
 
+  const initials = `${firstname?.[0] || ''}${lastname?.[0] || ''}`.toUpperCase() || 'U';
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -243,9 +332,46 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-5 pt-2">
-          {/* Change Name */}
+          {/* Profile Picture */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Change Name</h3>
+            <h3 className="text-sm font-semibold">Profile Picture</h3>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20 border-2 border-border">
+                <AvatarImage src={avatarUrl} alt="Profile" />
+                <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                  {initials !== 'U' ? initials : <UserIcon className="h-8 w-8" />}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {uploading ? 'Uploading...' : avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                </Button>
+                <p className="text-[10px] text-muted-foreground">
+                  JPG or PNG. Auto-resized to 500×500.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Profile Info */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold">Profile Information</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">First Name</Label>
@@ -256,8 +382,26 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
                 <Input value={lastname} onChange={(e) => setLastname(e.target.value)} />
               </div>
             </div>
-            <Button onClick={handleChangeName} disabled={loading || !firstname.trim() || !lastname.trim()} size="sm" className="w-full">
-              {loading ? 'Saving...' : 'Update Name'}
+            <div className="space-y-1.5">
+              <Label className="text-xs">About Me</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value.slice(0, 500))}
+                placeholder="Tell others a bit about yourself..."
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-[10px] text-muted-foreground text-right">
+                {description.length}/500
+              </p>
+            </div>
+            <Button
+              onClick={handleSaveProfile}
+              disabled={loading || !firstname.trim() || !lastname.trim()}
+              size="sm"
+              className="w-full"
+            >
+              {loading ? 'Saving...' : 'Save Profile'}
             </Button>
           </div>
 
@@ -293,7 +437,6 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
                   </p>
                 </div>
 
-                {/* Current admin links */}
                 <div className="space-y-2">
                   {adminLinks.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">No admins linked yet.</p>
@@ -336,7 +479,6 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
                   )}
                 </div>
 
-                {/* Add admin */}
                 <div className="space-y-2">
                   <Label className="text-xs">Add another admin</Label>
                   <div className="flex gap-2">
@@ -367,7 +509,6 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
                   </p>
                 </div>
 
-                {/* Change primary admin */}
                 {adminLinks.length > 0 && (
                   <div className="space-y-2 pt-2 border-t border-border">
                     <Label className="text-xs">Change Primary Admin</Label>
