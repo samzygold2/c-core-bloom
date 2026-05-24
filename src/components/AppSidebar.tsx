@@ -65,12 +65,19 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar className="h-9 w-9 shrink-0 border border-border">
-            <AvatarImage src={profile.avatar_url || undefined} alt={displayName} />
-            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-              {initials || <UserIcon className="h-4 w-4" />}
-            </AvatarFallback>
-          </Avatar>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+            className="shrink-0 rounded-full ring-offset-background transition-all hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <Avatar className="h-9 w-9 border border-border">
+              <AvatarImage src={profile.avatar_url || undefined} alt={displayName} />
+              <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                {initials || <UserIcon className="h-4 w-4" />}
+              </AvatarFallback>
+            </Avatar>
+          </button>
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold leading-tight truncate">{displayName}</h2>
