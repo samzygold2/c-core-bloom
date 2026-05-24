@@ -25,7 +25,7 @@ export function AppSidebar() {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
 
   const [profile, setProfile] = useState<{ firstname: string; lastname: string; avatar_url: string | null }>({
