@@ -119,12 +119,16 @@ const SuperAdmin = () => {
       return;
     }
 
-    const { data: roleData } = await supabase
+    const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', session.user.id)
       .eq('role', 'super_admin')
-      .single();
+      .maybeSingle();
+
+    if (roleError) {
+      console.error('Role check error:', roleError);
+    }
 
     if (!roleData) {
       toast({
