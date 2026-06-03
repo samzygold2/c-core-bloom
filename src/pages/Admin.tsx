@@ -134,12 +134,24 @@ const Admin = () => {
               <span className="hidden sm:inline">My Analytics</span>
               <span className="sm:hidden">Stats</span>
             </TabsTrigger>
+            <TabsTrigger value="submitted" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+              <Inbox className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Submitted Tests</span>
+              <span className="sm:hidden">Submitted</span>
+            </TabsTrigger>
             <TabsTrigger value="password-reset" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <KeyRound className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Password Reset</span>
               <span className="sm:hidden">Reset</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="my-users"><AssignedUsersManager /></TabsContent>
+          <TabsContent value="tests"><TestManager /></TabsContent>
+          <TabsContent value="questions"><QuestionManager /></TabsContent>
+          <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
+          <TabsContent value="submitted"><SubmittedTestsManager /></TabsContent>
+          <TabsContent value="password-reset"><PasswordResetManager /></TabsContent>
 
           <TabsContent value="my-users"><AssignedUsersManager /></TabsContent>
           <TabsContent value="tests"><TestManager /></TabsContent>
