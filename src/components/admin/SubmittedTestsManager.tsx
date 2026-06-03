@@ -1,11 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Loader2, Search, CalendarIcon, X } from 'lucide-react';
+import { format, isAfter, isBefore, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface SubmittedRow {
   id: string;
@@ -13,6 +26,7 @@ interface SubmittedRow {
   test_id: string;
   score: number | null;
   end_time: string | null;
+  start_time: string | null;
   firstname: string;
   lastname: string;
   email: string;
@@ -22,10 +36,17 @@ interface SubmittedRow {
   total_questions: number;
 }
 
+type SubmissionStatus = 'all' | 'submitted' | 'in_progress';
+
 export function SubmittedTestsManager() {
   const { user } = useAuth();
   const [rows, setRows] = useState<SubmittedRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<SubmissionStatus>('all');
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  const [toDate, setToDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (user) fetchSubmissions();
@@ -59,13 +80,12 @@ export function SubmittedTestsManager() {
       return;
     }
 
-    // 3. Get submitted user_tests (end_time set) for those users + tests
+    // 3. Get ALL user_tests for those users + tests (submitted and in-progress)
     const { data: submissions } = await supabase
       .from('user_tests')
-      .select('id, user_id, test_id, score, end_time')
+      .select('id, user_id, test_id, score, end_time, start_time')
       .in('user_id', userIds)
       .in('test_id', testIds)
-      .not('end_time', 'is', null)
       .order('end_time', { ascending: false });
 
     if (!submissions || submissions.length === 0) {
@@ -94,6 +114,7 @@ export function SubmittedTestsManager() {
           test_id: s.test_id,
           score: s.score,
           end_time: s.end_time,
+          start_time: s.start_time,
           firstname: p.firstname || '',
           lastname: p.lastname || '',
           email: p.email || '',
@@ -107,18 +128,159 @@ export function SubmittedTestsManager() {
     setLoading(false);
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setFromDate(undefined);
+    setToDate(undefined);
+  };
+
+  const filteredRows = useMemo(() => {
+    return rows.filter((r) => {
+      const name = `${r.firstname} ${r.lastname}`.trim().toLowerCase();
+      const email = r.email.toLowerCase();
+      const testTitle = r.test_title.toLowerCase();
+      const search = searchTerm.trim().toLowerCase();
+
+      // Search filter
+      if (search && !name.includes(search) && !email.includes(search) && !testTitle.includes(search)) {
+        return false;
+      }
+
+      // Status filter
+      const isSubmitted = r.end_time !== null;
+      if (statusFilter === 'submitted' && !isSubmitted) return false;
+      if (statusFilter === 'in_progress' && isSubmitted) return false;
+
+      // Date filter
+      const relevantDate = isSubmitted ? r.end_time : r.start_time;
+      if (relevantDate) {
+        const dateObj = new Date(relevantDate);
+        if (fromDate) {
+          const fromStart = startOfDay(fromDate);
+          if (isBefore(dateObj, fromStart) && !isSameDay(dateObj, fromStart)) return false;
+        }
+        if (toDate) {
+          const toEnd = endOfDay(toDate);
+          if (isAfter(dateObj, toEnd) && !isSameDay(dateObj, toEnd)) return false;
+        }
+      } else if (fromDate || toDate) {
+        // If there's no date to compare and a date filter is active, exclude in-progress without start_time
+        return false;
+      }
+
+      return true;
+    });
+  }, [rows, searchTerm, statusFilter, fromDate, toDate]);
+
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || fromDate || toDate;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Submitted Tests</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by student name or test title..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as SubmissionStatus)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* From Date */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full sm:w-auto justify-start text-left font-normal',
+                    !fromDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {fromDate ? format(fromDate, 'PPP') : 'From Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={fromDate}
+                  onSelect={setFromDate}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* To Date */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full sm:w-auto justify-start text-left font-normal',
+                    !toDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {toDate ? format(toDate, 'PPP') : 'To Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={toDate}
+                  onSelect={setToDate}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
+                <X className="h-4 w-4" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Results count */}
+        <p className="text-sm text-muted-foreground">
+          Showing {filteredRows.length} of {rows.length} result{rows.length !== 1 ? 's' : ''}
+        </p>
+
         {loading ? (
           <div className="flex items-center justify-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No submitted tests yet.</p>
+        ) : filteredRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {hasActiveFilters ? 'No results match your filters.' : 'No submitted tests yet.'}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -127,14 +289,16 @@ export function SubmittedTestsManager() {
                   <TableHead>Student</TableHead>
                   <TableHead>About</TableHead>
                   <TableHead>Test</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Submitted</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((r) => {
+                {filteredRows.map((r) => {
                   const name = `${r.firstname} ${r.lastname}`.trim() || r.email;
                   const initials = `${r.firstname?.[0] || ''}${r.lastname?.[0] || ''}`.toUpperCase() || 'U';
+                  const isSubmitted = r.end_time !== null;
                   return (
                     <TableRow key={r.id}>
                       <TableCell>
@@ -155,6 +319,13 @@ export function SubmittedTestsManager() {
                         </p>
                       </TableCell>
                       <TableCell className="text-sm">{r.test_title}</TableCell>
+                      <TableCell>
+                        {isSubmitted ? (
+                          <Badge variant="default" className="bg-green-600 hover:bg-green-700">Submitted</Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-amber-500 text-amber-600">In Progress</Badge>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary">
                           {r.score ?? 0} / {r.total_questions}
