@@ -4,12 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, KeyRound } from 'lucide-react';
+import { Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, KeyRound, Inbox } from 'lucide-react';
 import { TestManager } from '@/components/admin/TestManager';
 import { QuestionManager } from '@/components/admin/QuestionManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { AssignedUsersManager } from '@/components/admin/AssignedUsersManager';
 import PasswordResetManager from '@/components/admin/PasswordResetManager';
+import { SubmittedTestsManager } from '@/components/admin/SubmittedTestsManager';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface AdminStats {
@@ -133,6 +134,11 @@ const Admin = () => {
               <span className="hidden sm:inline">My Analytics</span>
               <span className="sm:hidden">Stats</span>
             </TabsTrigger>
+            <TabsTrigger value="submitted" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+              <Inbox className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Submitted Tests</span>
+              <span className="sm:hidden">Submitted</span>
+            </TabsTrigger>
             <TabsTrigger value="password-reset" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <KeyRound className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Password Reset</span>
@@ -144,6 +150,7 @@ const Admin = () => {
           <TabsContent value="tests"><TestManager /></TabsContent>
           <TabsContent value="questions"><QuestionManager /></TabsContent>
           <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
+          <TabsContent value="submitted"><SubmittedTestsManager /></TabsContent>
           <TabsContent value="password-reset"><PasswordResetManager /></TabsContent>
         </Tabs>
       </div>
