@@ -152,12 +152,6 @@ const Admin = () => {
           <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
           <TabsContent value="submitted"><SubmittedTestsManager /></TabsContent>
           <TabsContent value="password-reset"><PasswordResetManager /></TabsContent>
-
-          <TabsContent value="my-users"><AssignedUsersManager /></TabsContent>
-          <TabsContent value="tests"><TestManager /></TabsContent>
-          <TabsContent value="questions"><QuestionManager /></TabsContent>
-          <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
-          <TabsContent value="password-reset"><PasswordResetManager /></TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
