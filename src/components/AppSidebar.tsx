@@ -64,7 +64,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader className="p-4 border-b">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center justify-center gap-3 min-w-0">
           <button
             type="button"
             onClick={toggleSidebar}
