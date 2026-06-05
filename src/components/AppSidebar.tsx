@@ -102,7 +102,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild tooltip={item.title}>
                       <NavLink
                         to={item.url}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
+                        className="flex items-center justify-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
