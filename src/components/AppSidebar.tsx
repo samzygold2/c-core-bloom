@@ -62,7 +62,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
+    <Sidebar collapsible="icon" variant="floating">
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center gap-3 min-w-0">
           <button
