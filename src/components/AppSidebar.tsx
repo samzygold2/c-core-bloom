@@ -62,9 +62,9 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" variant="floating">
+    <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="p-4 border-b">
-        <div className="flex items-center justify-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             onClick={toggleSidebar}
@@ -102,7 +102,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild tooltip={item.title}>
                       <NavLink
                         to={item.url}
-                        className="flex items-center justify-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
+                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
@@ -130,7 +130,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center justify-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -149,7 +149,7 @@ export function AppSidebar() {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-center gap-3 text-muted-foreground hover:text-destructive"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
           onClick={signOut}
           title="Logout"
         >
