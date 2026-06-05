@@ -316,7 +316,7 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {triggerVariant === 'sidebar' ? (
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-muted-foreground">
+          <Button variant="ghost" size="sm" className="w-full justify-center gap-3 text-muted-foreground">
             <Settings className="h-4 w-4" />
             <span>Settings</span>
           </Button>
