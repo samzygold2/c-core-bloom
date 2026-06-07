@@ -4,13 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, KeyRound, Inbox } from 'lucide-react';
+import { Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, KeyRound, Inbox, GraduationCap } from 'lucide-react';
 import { TestManager } from '@/components/admin/TestManager';
 import { QuestionManager } from '@/components/admin/QuestionManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { AssignedUsersManager } from '@/components/admin/AssignedUsersManager';
 import PasswordResetManager from '@/components/admin/PasswordResetManager';
 import { SubmittedTestsManager } from '@/components/admin/SubmittedTestsManager';
+import { JambQuestionsManager } from '@/components/admin/JambQuestionsManager';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface AdminStats {
@@ -113,7 +114,7 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="my-users" className="space-y-4">
+        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'my-users'} className="space-y-4">
           <TabsList className="bg-card border shadow-sm w-full flex-wrap h-auto p-1 gap-1">
             <TabsTrigger value="my-users" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -144,6 +145,11 @@ const Admin = () => {
               <span className="hidden sm:inline">Password Reset</span>
               <span className="sm:hidden">Reset</span>
             </TabsTrigger>
+            <TabsTrigger value="jamb" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+              <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">JAMB Questions</span>
+              <span className="sm:hidden">JAMB</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="my-users"><AssignedUsersManager /></TabsContent>
@@ -152,6 +158,7 @@ const Admin = () => {
           <TabsContent value="analytics"><AnalyticsDashboard /></TabsContent>
           <TabsContent value="submitted"><SubmittedTestsManager /></TabsContent>
           <TabsContent value="password-reset"><PasswordResetManager /></TabsContent>
+          <TabsContent value="jamb"><JambQuestionsManager /></TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
