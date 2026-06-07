@@ -95,6 +95,60 @@ export type Database = {
         }
         Relationships: []
       }
+      past_questions: {
+        Row: {
+          aloc_id: string
+          correct_answer: string | null
+          created_at: string
+          exam_type: string | null
+          explanation: string | null
+          id: string
+          image_url: string | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question_text: string
+          subject: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          aloc_id: string
+          correct_answer?: string | null
+          created_at?: string
+          exam_type?: string | null
+          explanation?: string | null
+          id?: string
+          image_url?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question_text: string
+          subject: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          aloc_id?: string
+          correct_answer?: string | null
+          created_at?: string
+          exam_type?: string | null
+          explanation?: string | null
+          id?: string
+          image_url?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question_text?: string
+          subject?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           assigned_admin_id: string | null
@@ -151,6 +205,47 @@ export type Database = {
             columns: ["assigned_admin_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_visibility: {
+        Row: {
+          activated_at: string | null
+          admin_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          question_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          admin_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          admin_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_visibility_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "past_questions"
             referencedColumns: ["id"]
           },
         ]
