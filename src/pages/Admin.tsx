@@ -4,13 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, KeyRound, Inbox } from 'lucide-react';
+import { Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, KeyRound, Inbox, GraduationCap } from 'lucide-react';
 import { TestManager } from '@/components/admin/TestManager';
 import { QuestionManager } from '@/components/admin/QuestionManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { AssignedUsersManager } from '@/components/admin/AssignedUsersManager';
 import PasswordResetManager from '@/components/admin/PasswordResetManager';
 import { SubmittedTestsManager } from '@/components/admin/SubmittedTestsManager';
+import { JambQuestionsManager } from '@/components/admin/JambQuestionsManager';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface AdminStats {
