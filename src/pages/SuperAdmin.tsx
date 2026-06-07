@@ -28,12 +28,14 @@ import {
   BarChart3,
   BookOpen,
   AlertTriangle,
-  Download
+  Download,
+  GraduationCap
 } from 'lucide-react';
 import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
 import AdminPasswordResetManager from '@/components/admin/AdminPasswordResetManager';
 import AdminActivityMonitor from '@/components/admin/AdminActivityMonitor';
+import { SuperAdminJambSync } from '@/components/admin/SuperAdminJambSync';
 
 interface AuditLog {
   id: string;
@@ -619,6 +621,10 @@ const SuperAdmin = () => {
             <TabsTrigger value="admin-otp" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <KeyRound className="h-4 w-4 mr-2" />
               Admin OTP
+            </TabsTrigger>
+            <TabsTrigger value="jamb" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <GraduationCap className="h-4 w-4 mr-2" />
+              JAMB Sync
             </TabsTrigger>
           </TabsList>
 
