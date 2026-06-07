@@ -915,6 +915,10 @@ const SuperAdmin = () => {
           <TabsContent value="admin-otp">
             <AdminPasswordResetManager />
           </TabsContent>
+
+          <TabsContent value="jamb">
+            <SuperAdminJambSync />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
