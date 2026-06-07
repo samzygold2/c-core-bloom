@@ -15,6 +15,7 @@ import Results from "./pages/Results";
 import ResultDetail from "./pages/ResultDetail";
 import Admin from "./pages/Admin";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
+import JambPractice from "./pages/JambPractice";
 import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/results" element={<Results />} />
             <Route path="/results/:resultId" element={<ResultDetail />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/jamb" element={<JambPractice />} />
             <Route path="/super-admin" element={<SuperAdmin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
