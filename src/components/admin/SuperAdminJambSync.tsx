@@ -24,10 +24,18 @@ export function SuperAdminJambSync() {
   const sync = async () => {
     setSyncing(true);
     setResult(null);
-    const { data, error } = await supabase.functions.invoke('aloc-sync', { body: {} });
+    const { data, error } = await supabase.functions.invoke('aloc-sync', {
+      body: { total: 40, pages: 2, background: true },
+    });
     setSyncing(false);
     if (error) toast({ title: 'Sync failed', description: error.message, variant: 'destructive' });
-    else { setResult(data); toast({ title: 'Sync complete', description: `Imported ${data?.inserted ?? 0} questions` }); }
+    else {
+      setResult(data);
+      toast({
+        title: data?.status === 'started' ? 'Sync started' : 'Sync complete',
+        description: data?.message ?? `Imported ${data?.inserted ?? 0} questions`,
+      });
+    }
   };
 
   return (
