@@ -77,8 +77,12 @@ export function SuperAdminJambSync() {
       + job.current_page)
     : 0;
   const pct = totalSteps ? Math.min(100, Math.round((doneSteps / totalSteps) * 100)) : 0;
-  const canResume = job && (job.status === 'failed' || job.status === 'paused');
-  const isRunning = job?.status === 'running';
+  // A job is "live" only if it's running AND has progressed in the last 30s.
+  const lastUpdateAgeMs = job ? Date.now() - new Date(job.updated_at ?? job.started_at).getTime() : Infinity;
+  const isRunning = job?.status === 'running' && lastUpdateAgeMs < 30_000;
+  const canResume = !!job && (job.status === 'failed' || job.status === 'paused' || (job.status === 'running' && lastUpdateAgeMs >= 30_000));
+
+
 
   return (
     <div className="space-y-4">
