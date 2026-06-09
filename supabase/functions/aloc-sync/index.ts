@@ -42,6 +42,13 @@ Deno.serve(async (req) => {
       return json({ success: true, job: data }, 200);
     }
 
+    // Auto-mark stale "running" jobs (no progress for 60s) as failed so they're resumable.
+    await admin
+      .from('jamb_sync_jobs')
+      .update({ status: 'failed', message: 'Auto-marked stale (worker stopped)' })
+      .eq('status', 'running')
+      .lt('updated_at', new Date(Date.now() - 60_000).toISOString());
+
     // Resume: pick the most recent non-completed job, else start fresh.
     let job: any = null;
     if (action === 'resume' || body.jobId) {
@@ -50,9 +57,18 @@ Deno.serve(async (req) => {
         ? await q.eq('id', body.jobId).maybeSingle()
         : await q.in('status', ['running', 'paused', 'failed']).order('started_at', { ascending: false }).limit(1).maybeSingle();
       job = data;
+      if (action === 'resume' && !job) {
+        return json({ error: 'No previous sync to resume. Start a new one.' }, 400);
+      }
     }
 
     if (!job) {
+      // Starting a new sync — supersede any other running job.
+      await admin
+        .from('jamb_sync_jobs')
+        .update({ status: 'failed', message: 'Superseded by new sync' })
+        .eq('status', 'running');
+
       const subjects: string[] = body.subjects?.length ? body.subjects : SUBJECTS;
       const years: number[] = body.years?.length ? body.years : Array.from({length: 16}, (_,i) => 2009 + i);
       const total: number = Math.min(Math.max(body.total ?? 40, 1), 40);
