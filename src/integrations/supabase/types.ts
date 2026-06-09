@@ -35,6 +35,69 @@ export type Database = {
         }
         Relationships: []
       }
+      jamb_sync_jobs: {
+        Row: {
+          created_at: string
+          current_page: number
+          current_subject: string | null
+          current_year: number | null
+          errors: string[]
+          failed: number
+          finished_at: string | null
+          id: string
+          inserted: number
+          message: string | null
+          pages: number
+          started_at: string
+          started_by: string | null
+          status: string
+          subjects: string[]
+          total_per_call: number
+          updated_at: string
+          years: number[]
+        }
+        Insert: {
+          created_at?: string
+          current_page?: number
+          current_subject?: string | null
+          current_year?: number | null
+          errors?: string[]
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          message?: string | null
+          pages?: number
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          subjects: string[]
+          total_per_call?: number
+          updated_at?: string
+          years: number[]
+        }
+        Update: {
+          created_at?: string
+          current_page?: number
+          current_subject?: string | null
+          current_year?: number | null
+          errors?: string[]
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          message?: string | null
+          pages?: number
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          subjects?: string[]
+          total_per_call?: number
+          updated_at?: string
+          years?: number[]
+        }
+        Relationships: []
+      }
       password_reset_otps: {
         Row: {
           created_at: string
