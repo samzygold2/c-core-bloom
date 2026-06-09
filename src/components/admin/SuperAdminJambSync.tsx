@@ -22,6 +22,7 @@ type Job = {
   errors: string[];
   message: string | null;
   started_at: string;
+  updated_at: string;
   finished_at: string | null;
 };
 
