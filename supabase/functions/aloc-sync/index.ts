@@ -30,47 +30,84 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const subjects: string[] = body.subjects?.length ? body.subjects : SUBJECTS;
     const years: number[] = body.years?.length ? body.years : Array.from({length: 16}, (_,i) => 2009 + i);
-    const perBatch: number = Math.min(Math.max(body.perBatch ?? 20, 1), 40);
+    // ALOC /q endpoint returns multiple questions; total max ~40 per call
+    const total: number = Math.min(Math.max(body.total ?? 40, 1), 40);
+    // Optional: number of pages per (subject, year) to fetch (each call returns up to `total`)
+    const pages: number = Math.min(Math.max(body.pages ?? 1, 1), 5);
+    // If true, run the sync in the background and return immediately
+    const background: boolean = body.background !== false;
 
-    let inserted = 0, updated = 0, failed = 0;
-    const errors: string[] = [];
+    const runSync = async () => {
+      let inserted = 0, failed = 0;
+      const errors: string[] = [];
+      const seen = new Set<string>();
 
-    for (const subject of subjects) {
-      for (const year of years) {
-        try {
-          const url = `${ALOC_BASE}/m?subject=${encodeURIComponent(subject)}&year=${year}&type=utme`;
-          const resp = await fetch(url, { headers: { 'AccessToken': token, 'Accept': 'application/json' } });
-          if (!resp.ok) { failed++; errors.push(`${subject}/${year}: HTTP ${resp.status}`); continue; }
-          const json = await resp.json();
-          const items: any[] = Array.isArray(json?.data) ? json.data : [];
-          for (const q of items.slice(0, perBatch)) {
-            const alocId = String(q.id ?? `${subject}-${year}-${q.question?.slice(0,30)}`);
-            const row = {
-              aloc_id: alocId,
-              subject,
-              year,
-              question_text: q.question ?? '',
-              option_a: q.option?.a ?? null,
-              option_b: q.option?.b ?? null,
-              option_c: q.option?.c ?? null,
-              option_d: q.option?.d ?? null,
-              correct_answer: (q.answer ?? '').toString().toLowerCase() || null,
-              explanation: q.solution ?? null,
-              image_url: q.image ?? null,
-              exam_type: q.examtype ?? 'utme',
-            };
-            const { error, data } = await admin.from('past_questions').upsert(row, { onConflict: 'aloc_id' }).select('id');
-            if (error) { failed++; errors.push(`${subject}/${year}: ${error.message}`); }
-            else if (data) inserted++;
+      for (const subject of subjects) {
+        for (const year of years) {
+          for (let p = 0; p < pages; p++) {
+            try {
+              // /q returns a batch of random questions for the subject/year
+              const url = `${ALOC_BASE}/q/${total}?subject=${encodeURIComponent(subject)}&year=${year}&type=utme`;
+              const resp = await fetch(url, { headers: { 'AccessToken': token, 'Accept': 'application/json' } });
+              if (!resp.ok) {
+                failed++;
+                errors.push(`${subject}/${year} p${p}: HTTP ${resp.status}`);
+                continue;
+              }
+              const j = await resp.json();
+              const items: any[] = Array.isArray(j?.data) ? j.data : (j?.data ? [j.data] : []);
+              if (!items.length) {
+                errors.push(`${subject}/${year} p${p}: empty`);
+                continue;
+              }
+              const rows = [];
+              for (const q of items) {
+                const alocId = String(q.id ?? `${subject}-${year}-${(q.question ?? '').slice(0, 60)}`);
+                if (seen.has(alocId)) continue;
+                seen.add(alocId);
+                rows.push({
+                  aloc_id: alocId,
+                  subject,
+                  year,
+                  question_text: q.question ?? '',
+                  option_a: q.option?.a ?? null,
+                  option_b: q.option?.b ?? null,
+                  option_c: q.option?.c ?? null,
+                  option_d: q.option?.d ?? null,
+                  correct_answer: (q.answer ?? '').toString().toLowerCase() || null,
+                  explanation: q.solution ?? null,
+                  image_url: q.image ?? null,
+                  exam_type: q.examtype ?? 'utme',
+                });
+              }
+              if (rows.length) {
+                const { error, data } = await admin
+                  .from('past_questions')
+                  .upsert(rows, { onConflict: 'aloc_id' })
+                  .select('id');
+                if (error) { failed++; errors.push(`${subject}/${year} p${p}: ${error.message}`); }
+                else if (data) inserted += data.length;
+              }
+            } catch (e: any) {
+              failed++;
+              errors.push(`${subject}/${year} p${p}: ${e.message}`);
+            }
           }
-        } catch (e: any) {
-          failed++;
-          errors.push(`${subject}/${year}: ${e.message}`);
         }
       }
+      console.log(`[aloc-sync] done. inserted=${inserted} failed=${failed}`);
+      if (errors.length) console.log(`[aloc-sync] first errors:`, errors.slice(0, 10));
+      return { inserted, failed, errors: errors.slice(0, 20) };
+    };
+
+    if (background) {
+      // @ts-ignore - EdgeRuntime is provided by Supabase runtime
+      EdgeRuntime.waitUntil(runSync());
+      return json({ success: true, status: 'started', message: 'Sync running in background. Refresh question list in 1-3 minutes.' }, 202);
     }
 
-    return json({ success: true, inserted, updated, failed, errors: errors.slice(0, 20) }, 200);
+    const result = await runSync();
+    return json({ success: true, ...result }, 200);
   } catch (e: any) {
     return json({ error: e.message ?? 'Internal error' }, 500);
   }
