@@ -60,7 +60,6 @@ export function AppSidebar() {
 
   const adminItems = [
     { title: 'Admin Panel', url: '/admin', icon: Shield },
-    { title: 'JAMB Questions', url: '/admin?tab=jamb', icon: GraduationCap },
   ];
 
   return (
