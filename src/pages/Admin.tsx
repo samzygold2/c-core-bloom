@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,12 +24,18 @@ interface AdminStats {
 const Admin = () => {
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [stats, setStats] = useState<AdminStats>({
     assignedUsers: 0,
     activeTests: 0,
     totalQuestions: 0,
     completedExams: 0,
   });
+
+  const activeTab = searchParams.get('tab') || 'my-users';
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -114,7 +120,7 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'my-users'} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList className="bg-card border shadow-sm w-full flex-wrap h-auto p-1 gap-1">
             <TabsTrigger value="my-users" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
