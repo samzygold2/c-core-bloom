@@ -24,12 +24,18 @@ interface AdminStats {
 const Admin = () => {
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [stats, setStats] = useState<AdminStats>({
     assignedUsers: 0,
     activeTests: 0,
     totalQuestions: 0,
     completedExams: 0,
   });
+
+  const activeTab = searchParams.get('tab') || 'my-users';
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
