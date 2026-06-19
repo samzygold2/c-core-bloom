@@ -120,7 +120,7 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'my-users'} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList className="bg-card border shadow-sm w-full flex-wrap h-auto p-1 gap-1">
             <TabsTrigger value="my-users" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
