@@ -214,6 +214,7 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
               onClick={() => setOpenYear(isOpen ? null : year)}
               className="w-full flex items-center justify-center py-2 border-t hover:bg-muted/50 transition-colors"
               aria-label={isOpen ? 'Collapse' : 'Expand'}
+              style={{ backgroundColor: 'rgb(207, 205, 252)' }}
             >
               <ChevronUp
                 className={cn(
