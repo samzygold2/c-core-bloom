@@ -216,10 +216,11 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
               aria-label={isOpen ? 'Collapse' : 'Expand'}
             >
               <ChevronUp
-                className={cn(
-                  'h-4 w-4 transition-transform duration-300',
-                  isOpen ? 'rotate-0' : 'rotate-180'
-                )}
+              className={cn(
+                'h-4 w-4 transition-transform duration-300',
+                isOpen ? 'rotate-0' : 'rotate-180'
+              )}
+              style={{ color: 'rgb(207, 205, 252)' }}
               />
             </button>
           </Card>
