@@ -130,21 +130,8 @@ export function SuperAdminJambSync() {
         </CardContent>
       </Card>
 
-      <Card className="bg-white border-blue-100">
-        <CardHeader><CardTitle className="text-slate-800">Override Admin Visibility</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2 items-center">
-            <Button variant="outline" size="sm" onClick={loadAdmins}>Load admins</Button>
-            <Select value={adminId} onValueChange={setAdminId}>
-              <SelectTrigger className="w-80"><SelectValue placeholder="Select an admin to override" /></SelectTrigger>
-              <SelectContent>
-                {admins.map(a => <SelectItem key={a.id} value={a.id}>{a.firstname} {a.lastname} — {a.email}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {adminId && <JambQuestionsManager overrideAdminId={adminId} />}
-        </CardContent>
-      </Card>
+      <SuperAdminJambManager />
     </div>
   );
 }
+
