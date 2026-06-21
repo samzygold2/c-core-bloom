@@ -61,13 +61,6 @@ export function SuperAdminJambSync() {
     loadLatest();
   };
 
-  const loadAdmins = async () => {
-    const { data: roleRows } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
-    const ids = (roleRows || []).map((r: any) => r.user_id);
-    if (!ids.length) return;
-    const { data } = await supabase.from('profiles').select('id, firstname, lastname, email').in('id', ids);
-    setAdmins((data as any) || []);
-  };
 
   const totalSteps = job ? job.subjects.length * job.years.length * job.pages : 0;
   const doneSteps = job
