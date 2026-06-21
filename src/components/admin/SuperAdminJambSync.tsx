@@ -3,10 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Play, RefreshCw } from 'lucide-react';
-import { JambQuestionsManager } from './JambQuestionsManager';
+import { SuperAdminJambManager } from './SuperAdminJambManager';
+
 
 type Job = {
   id: string;
@@ -29,9 +29,8 @@ type Job = {
 export function SuperAdminJambSync() {
   const [busy, setBusy] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
-  const [adminId, setAdminId] = useState<string>('');
-  const [admins, setAdmins] = useState<{ id: string; firstname: string; lastname: string; email: string }[]>([]);
   const pollRef = useRef<number | null>(null);
+
 
   const loadLatest = async () => {
     const { data } = await supabase
@@ -62,13 +61,6 @@ export function SuperAdminJambSync() {
     loadLatest();
   };
 
-  const loadAdmins = async () => {
-    const { data: roleRows } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
-    const ids = (roleRows || []).map((r: any) => r.user_id);
-    if (!ids.length) return;
-    const { data } = await supabase.from('profiles').select('id, firstname, lastname, email').in('id', ids);
-    setAdmins((data as any) || []);
-  };
 
   const totalSteps = job ? job.subjects.length * job.years.length * job.pages : 0;
   const doneSteps = job
@@ -130,21 +122,8 @@ export function SuperAdminJambSync() {
         </CardContent>
       </Card>
 
-      <Card className="bg-white border-blue-100">
-        <CardHeader><CardTitle className="text-slate-800">Override Admin Visibility</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2 items-center">
-            <Button variant="outline" size="sm" onClick={loadAdmins}>Load admins</Button>
-            <Select value={adminId} onValueChange={setAdminId}>
-              <SelectTrigger className="w-80"><SelectValue placeholder="Select an admin to override" /></SelectTrigger>
-              <SelectContent>
-                {admins.map(a => <SelectItem key={a.id} value={a.id}>{a.firstname} {a.lastname} — {a.email}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {adminId && <JambQuestionsManager overrideAdminId={adminId} />}
-        </CardContent>
-      </Card>
+      <SuperAdminJambManager />
     </div>
   );
 }
+
