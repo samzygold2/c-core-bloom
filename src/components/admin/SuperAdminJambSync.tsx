@@ -29,9 +29,8 @@ type Job = {
 export function SuperAdminJambSync() {
   const [busy, setBusy] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
-  const [adminId, setAdminId] = useState<string>('');
-  const [admins, setAdmins] = useState<{ id: string; firstname: string; lastname: string; email: string }[]>([]);
   const pollRef = useRef<number | null>(null);
+
 
   const loadLatest = async () => {
     const { data } = await supabase
