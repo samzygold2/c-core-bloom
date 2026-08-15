@@ -35,72 +35,6 @@ export type Database = {
         }
         Relationships: []
       }
-      jamb_sync_jobs: {
-        Row: {
-          consecutive_failures: number | null
-          created_at: string
-          current_page: number
-          current_subject: string | null
-          current_year: number | null
-          errors: string[]
-          failed: number
-          finished_at: string | null
-          id: string
-          inserted: number
-          message: string | null
-          pages: number
-          started_at: string
-          started_by: string | null
-          status: string
-          subjects: string[]
-          task_retry_counts: Json | null
-          total_per_call: number
-          updated_at: string
-          years: number[]
-        }
-        Insert: {
-          consecutive_failures?: number | null
-          created_at?: string
-          current_page?: number
-          current_subject?: string | null
-          current_year?: number | null
-          errors?: string[]
-          failed?: number
-          finished_at?: string | null
-          id?: string
-          inserted?: number
-          message?: string | null
-          pages?: number
-          started_at?: string
-          started_by?: string | null
-          status?: string
-          subjects: string[]
-          task_retry_counts?: Json | null
-          total_per_call?: number
-          updated_at?: string
-          years: number[]
-        }
-        Update: {
-          consecutive_failures?: number | null
-          created_at?: string
-          current_page?: number
-          current_subject?: string | null
-          current_year?: number | null
-          errors?: string[]
-          failed?: number
-          finished_at?: string | null
-          id?: string
-          inserted?: number
-          message?: string | null
-          pages?: number
-          started_at?: string
-          started_by?: string | null
-          status?: string
-          subjects?: string[]
-          task_retry_counts?: Json | null
-        }
-        Relationships: []
-      }
       jamb_integrity_audit_log: {
         Row: {
           actions_taken: Json | null
@@ -131,6 +65,75 @@ export type Database = {
           run_at?: string
           run_by?: string | null
           trigger_source?: string
+        }
+        Relationships: []
+      }
+      jamb_sync_jobs: {
+        Row: {
+          consecutive_failures: number
+          created_at: string
+          current_page: number
+          current_subject: string | null
+          current_year: number | null
+          errors: string[]
+          failed: number
+          finished_at: string | null
+          id: string
+          inserted: number
+          message: string | null
+          pages: number
+          started_at: string
+          started_by: string | null
+          status: string
+          subjects: string[]
+          task_retry_counts: Json
+          total_per_call: number
+          updated_at: string
+          years: number[]
+        }
+        Insert: {
+          consecutive_failures?: number
+          created_at?: string
+          current_page?: number
+          current_subject?: string | null
+          current_year?: number | null
+          errors?: string[]
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          message?: string | null
+          pages?: number
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          subjects: string[]
+          task_retry_counts?: Json
+          total_per_call?: number
+          updated_at?: string
+          years: number[]
+        }
+        Update: {
+          consecutive_failures?: number
+          created_at?: string
+          current_page?: number
+          current_subject?: string | null
+          current_year?: number | null
+          errors?: string[]
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          message?: string | null
+          pages?: number
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          subjects?: string[]
+          task_retry_counts?: Json
+          total_per_call?: number
+          updated_at?: string
+          years?: number[]
         }
         Relationships: []
       }
@@ -204,8 +207,8 @@ export type Database = {
           explanation: string | null
           id: string
           image_url: string | null
-          is_quarantined: boolean | null
-          needs_review: boolean | null
+          is_quarantined: boolean
+          needs_review: boolean
           option_a: string | null
           option_b: string | null
           option_c: string | null
@@ -225,8 +228,8 @@ export type Database = {
           explanation?: string | null
           id?: string
           image_url?: string | null
-          is_quarantined?: boolean | null
-          needs_review?: boolean | null
+          is_quarantined?: boolean
+          needs_review?: boolean
           option_a?: string | null
           option_b?: string | null
           option_c?: string | null
@@ -246,8 +249,8 @@ export type Database = {
           explanation?: string | null
           id?: string
           image_url?: string | null
-          is_quarantined?: boolean | null
-          needs_review?: boolean | null
+          is_quarantined?: boolean
+          needs_review?: boolean
           option_a?: string | null
           option_b?: string | null
           option_c?: string | null
@@ -357,6 +360,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "past_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_visibility_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "past_questions_clean"
             referencedColumns: ["id"]
           },
         ]
@@ -594,6 +604,72 @@ export type Database = {
         }
         Relationships: []
       }
+      past_questions_clean: {
+        Row: {
+          aloc_id: string | null
+          content_hash: string | null
+          correct_answer: string | null
+          created_at: string | null
+          exam_type: string | null
+          explanation: string | null
+          id: string | null
+          image_url: string | null
+          is_quarantined: boolean | null
+          needs_review: boolean | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          quarantine_reason: string | null
+          question_text: string | null
+          subject: string | null
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          aloc_id?: string | null
+          content_hash?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          exam_type?: string | null
+          explanation?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_quarantined?: boolean | null
+          needs_review?: boolean | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          quarantine_reason?: string | null
+          question_text?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          aloc_id?: string | null
+          content_hash?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          exam_type?: string | null
+          explanation?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_quarantined?: boolean | null
+          needs_review?: boolean | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          quarantine_reason?: string | null
+          question_text?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       user_questions: {
         Row: {
           created_at: string | null
@@ -631,19 +707,7 @@ export type Database = {
       }
     }
     Functions: {
-      approve_all_jamb_questions: {
-        Args: {
-          specific_subject?: string | null
-          specific_year?: number | null
-          target_admin_id?: string | null
-        }
-        Returns: Json
-      }
       cleanup_expired_otps: { Args: never; Returns: undefined }
-      get_database_storage_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -651,14 +715,8 @@ export type Database = {
         }
         Returns: boolean
       }
-      jamb_resolve_integrity_issues: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      jamb_run_integrity_audit: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      jamb_resolve_integrity_issues: { Args: never; Returns: Json }
+      jamb_run_integrity_audit: { Args: never; Returns: Json }
       score_test: {
         Args: { p_test_session_id: string; p_user_answers: Json }
         Returns: Json
