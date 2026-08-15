@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,43 +25,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    checkUserStatus();
-  }, [user, authLoading, navigate]);
-
-  const checkUserStatus = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('is_pending, is_waiting')
-      .eq('id', user!.id)
-      .single();
-
-    if (!error && data) {
-      setUserStatus(data);
-      if (!data.is_pending && !data.is_waiting) {
-        fetchTests();
-      } else {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
-    }
-  };
-
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  const fetchTests = async () => {
+  const fetchTests = useCallback(async () => {
     const { data, error } = await supabase
       .from('tests')
       .select('*')
@@ -78,7 +42,43 @@ const Dashboard = () => {
       setTests(data || []);
     }
     setLoading(false);
-  };
+  }, [toast]);
+
+  const checkUserStatus = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_pending, is_waiting')
+      .eq('id', user!.id)
+      .single();
+
+    if (!error && data) {
+      setUserStatus(data);
+      if (!data.is_pending && !data.is_waiting) {
+        fetchTests();
+      } else {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
+  }, [user, fetchTests]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    checkUserStatus();
+  }, [user, authLoading, navigate, checkUserStatus]);
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const startTest = (testId: string) => {
     navigate(`/test/${testId}`);

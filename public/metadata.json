@@ -1,0 +1,8 @@
+{
+  "name": "JAMB Practice & Exam Portal",
+  "description": "An interactive JAMB practice exam platform with real-time test taking, complete results analysis, and admin managers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

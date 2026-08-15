@@ -5,12 +5,27 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 interface TestTimerProps {
   durationMinutes: number;
   onTimeUp: () => void;
+  startTime?: number;
 }
 
-export const TestTimer = ({ durationMinutes, onTimeUp }: TestTimerProps) => {
-  const [timeLeft, setTimeLeft] = useState(durationMinutes * 60);
+export const TestTimer = ({ durationMinutes, onTimeUp, startTime }: TestTimerProps) => {
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (startTime) {
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = durationMinutes * 60 - elapsedSeconds;
+      return Math.max(0, remaining);
+    }
+    return durationMinutes * 60;
+  });
   const [isActive, setIsActive] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
+
+  useEffect(() => {
+    if (timeLeft <= 0 && isActive) {
+      setIsActive(false);
+      onTimeUp();
+    }
+  }, [timeLeft, isActive, onTimeUp]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;

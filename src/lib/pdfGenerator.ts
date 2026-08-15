@@ -8,7 +8,7 @@ interface TestResult {
   totalQuestions: number;
   startTime: string;
   endTime: string;
-  answers: any;
+  answers: Record<string, unknown>;
 }
 
 export const generateTestResultPDF = (result: TestResult) => {
