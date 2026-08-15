@@ -29,7 +29,8 @@ import {
   BookOpen,
   AlertTriangle,
   Download,
-  GraduationCap
+  GraduationCap,
+  Loader2
 } from 'lucide-react';
 import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
@@ -51,7 +52,7 @@ interface SystemLog {
   message: string;
   source: string;
   created_at: string;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
 }
 
 interface UserWithRoles {
@@ -73,7 +74,7 @@ interface TestResult {
   timestamp: string;
   startTime: string;
   endTime: string;
-  answers: any;
+  answers: Record<string, unknown> | null;
 }
 
 interface SystemStats {
@@ -81,6 +82,8 @@ interface SystemStats {
   totalAdmins: number;
   totalTests: number;
   totalQuestions: number;
+  totalJambQuestions: number;
+  activeJambQuestions: number;
   activeTests: number;
   completedTests: number;
   averageScore: number;
@@ -98,6 +101,8 @@ const SuperAdmin = () => {
     totalAdmins: 0,
     totalTests: 0,
     totalQuestions: 0,
+    totalJambQuestions: 0,
+    activeJambQuestions: 0,
     activeTests: 0,
     completedTests: 0,
     averageScore: 0,
@@ -107,6 +112,167 @@ const SuperAdmin = () => {
   const [downloadingAll, setDownloadingAll] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [jambActive, setJambActive] = useState<boolean>(false);
+  const [jambStatsLoading, setJambStatsLoading] = useState<boolean>(false);
+
+  const fetchJambStatus = async () => {
+    try {
+      const [{ count: activeCount }, { count: totalCount }] = await Promise.all([
+        supabase.from('question_visibility').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('past_questions').select('*', { count: 'exact', head: true }),
+      ]);
+      
+      setJambActive(activeCount ? activeCount > 0 : false);
+      setStats(prev => ({
+        ...prev,
+        totalJambQuestions: totalCount || 0,
+        activeJambQuestions: activeCount || 0,
+      }));
+    } catch (error) {
+      console.error('Error fetching JAMB status:', error);
+    }
+  };
+
+  useEffect(() => {
+    const handleSync = () => {
+      fetchJambStatus();
+      fetchStats();
+    };
+    window.addEventListener('jamb-questions-approved', handleSync);
+
+    // Live realtime updates with database
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedRefresh = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchJambStatus();
+        fetchStats();
+      }, 500);
+    };
+
+    const channel = supabase
+      .channel('super_admin_live_stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'past_questions' }, debouncedRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'question_visibility' }, debouncedRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, debouncedRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tests' }, debouncedRefresh)
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('jamb-questions-approved', handleSync);
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleJambToggle = async (checked: boolean) => {
+    setJambStatsLoading(true);
+    try {
+      if (checked) {
+        // Fast RPC approval across all admins
+        const { data, error } = await supabase.rpc('approve_all_jamb_questions', {
+          target_admin_id: null,
+          specific_year: null,
+          specific_subject: null,
+        });
+
+        if (!error && data) {
+          const resp = data as unknown as {
+            questions_approved: number;
+            admins_affected: number;
+            message?: string;
+          };
+          setJambActive(true);
+          toast({
+            title: '🌟 JAMB Questions Approved & Broadcasted',
+            description: resp.message || `Successfully approved ${resp.questions_approved} questions across ${resp.admins_affected} admin(s)!`,
+          });
+          window.dispatchEvent(new CustomEvent('jamb-questions-approved'));
+          return;
+        }
+
+        // Fallback if RPC is not present
+        let pqs: { id: string }[] = [];
+        let fromPq = 0;
+        const batchSize = 5000;
+        while (true) {
+          const { data: pqData, error: fetchErr } = await supabase
+            .from('past_questions')
+            .select('id')
+            .range(fromPq, fromPq + batchSize - 1);
+          
+          if (fetchErr) throw fetchErr;
+          if (!pqData || pqData.length === 0) break;
+          pqs = [...pqs, ...pqData];
+          if (pqData.length < batchSize) break;
+          fromPq += batchSize;
+        }
+
+        const { data: roles, error: rolesErr } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .in('role', ['admin', 'super_admin']);
+
+        if (rolesErr) throw rolesErr;
+
+        if (pqs && pqs.length > 0 && roles && roles.length > 0) {
+          const adminIds = Array.from(new Set(roles.map(r => r.user_id)));
+          const rows = [];
+          for (const pq of pqs) {
+            for (const adminId of adminIds) {
+              rows.push({
+                question_id: pq.id,
+                admin_id: adminId,
+                is_active: true,
+                activated_at: new Date().toISOString(),
+              });
+            }
+          }
+
+          for (let i = 0; i < rows.length; i += 5000) {
+            const chunk = rows.slice(i, i + 5000);
+            const { error: upsertErr } = await supabase
+              .from('question_visibility')
+              .upsert(chunk, { onConflict: 'question_id,admin_id' });
+
+            if (upsertErr) throw upsertErr;
+          }
+        }
+        setJambActive(true);
+        toast({
+          title: 'JAMB Questions Activated',
+          description: 'All JAMB questions have been successfully activated and approved for all admins and students!',
+        });
+        window.dispatchEvent(new CustomEvent('jamb-questions-approved'));
+      } else {
+        // Deactivate all questions by setting is_active to false
+        const { error: updateErr } = await supabase
+          .from('question_visibility')
+          .update({ is_active: false })
+          .eq('is_active', true);
+
+        if (updateErr) throw updateErr;
+
+        setJambActive(false);
+        toast({
+          title: 'JAMB Questions Deactivated',
+          description: 'All JAMB questions have been deactivated across the system.',
+        });
+        window.dispatchEvent(new CustomEvent('jamb-questions-approved'));
+      }
+    } catch (error: unknown) {
+      console.error('Error toggling JAMB questions:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      toast({
+        title: 'Error',
+        description: `Failed to update JAMB questions: ${errMsg}`,
+        variant: 'destructive',
+      });
+    } finally {
+      setJambStatsLoading(false);
+    }
+  };
 
   useEffect(() => {
     checkSuperAdminAccess();
@@ -154,6 +320,7 @@ const SuperAdmin = () => {
       fetchUsers(),
       fetchStats(),
       fetchAllResults(),
+      fetchJambStatus(),
     ]);
   };
 
@@ -234,6 +401,8 @@ const SuperAdmin = () => {
       { data: adminRoles },
       { count: totalTests },
       { count: totalQuestions },
+      { count: totalJambQuestions },
+      { count: activeJambQuestions },
       { count: activeTests },
       { data: completedAttempts },
     ] = await Promise.all([
@@ -241,6 +410,8 @@ const SuperAdmin = () => {
       supabase.from('user_roles').select('*').eq('role', 'admin'),
       supabase.from('tests').select('*', { count: 'exact', head: true }),
       supabase.from('questions').select('*', { count: 'exact', head: true }),
+      supabase.from('past_questions').select('*', { count: 'exact', head: true }),
+      supabase.from('question_visibility').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('tests').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('user_tests').select('score').not('score', 'is', null),
     ]);
@@ -254,6 +425,8 @@ const SuperAdmin = () => {
       totalAdmins: adminRoles?.length || 0,
       totalTests: totalTests || 0,
       totalQuestions: totalQuestions || 0,
+      totalJambQuestions: totalJambQuestions || 0,
+      activeJambQuestions: activeJambQuestions || 0,
       activeTests: activeTests || 0,
       completedTests: completedAttempts?.length || 0,
       averageScore,
@@ -278,7 +451,18 @@ const SuperAdmin = () => {
 
     if (!data) return;
 
-    const results: TestResult[] = data.map((item: any) => ({
+    interface RawTestResult {
+      id: string;
+      score: number;
+      start_time: string;
+      end_time: string;
+      answers: Record<string, unknown> | null;
+      created_at: string;
+      tests: { title: string; total_questions: number } | null;
+      profiles: { firstname: string; lastname: string; email: string } | null;
+    }
+
+    const results: TestResult[] = (data as unknown as RawTestResult[]).map((item) => ({
       id: item.id,
       username: item.profiles ? `${item.profiles.firstname} ${item.profiles.lastname}` : 'Unknown User',
       email: item.profiles?.email || '',
@@ -486,6 +670,23 @@ const SuperAdmin = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-slate-50 border border-blue-100 px-3 py-1.5 rounded-full shadow-inner text-xs sm:text-sm font-medium text-slate-700 mr-1 sm:mr-2">
+              <span className="shrink-0">JAMB Questions:</span>
+              {jambStatsLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              ) : (
+                <Switch
+                  id="super-jamb-master-toggle"
+                  checked={jambActive}
+                  onCheckedChange={handleJambToggle}
+                  disabled={jambStatsLoading}
+                />
+              )}
+              <span className={jambActive ? "text-green-600 font-bold shrink-0" : "text-slate-500 shrink-0"}>
+                {jambActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -509,80 +710,96 @@ const SuperAdmin = () => {
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 mb-8">
           <Card className="bg-white border-blue-100 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.totalUsers}</p>
-                  <p className="text-xs text-slate-500">Users</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{stats.totalUsers}</p>
+                  <p className="text-xs text-slate-500 truncate">Users</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="bg-white border-blue-100 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <UserCog className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.totalAdmins}</p>
-                  <p className="text-xs text-slate-500">Admins</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <UserCog className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{stats.totalAdmins}</p>
+                  <p className="text-xs text-slate-500 truncate">Admins</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="bg-white border-blue-100 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-blue-400" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.totalTests}</p>
-                  <p className="text-xs text-slate-500">Tests</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{stats.totalTests}</p>
+                  <p className="text-xs text-slate-500 truncate">Tests</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="bg-white border-blue-100 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Database className="h-8 w-8 text-sky-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.totalQuestions}</p>
-                  <p className="text-xs text-slate-500">Questions</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Database className="h-6 w-6 sm:h-8 sm:w-8 text-sky-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{stats.totalQuestions}</p>
+                  <p className="text-xs text-slate-500 truncate">Custom Qs</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border-blue-200 ring-1 ring-blue-500/20 shadow-sm bg-gradient-to-br from-blue-50/50 to-white">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-indigo-950 truncate">{stats.totalJambQuestions.toLocaleString()}</p>
+                  <div className="flex items-center gap-1 text-[11px] text-indigo-700 truncate">
+                    <span className="font-semibold">JAMB DB</span>
+                    {stats.activeJambQuestions > 0 && (
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded">Live</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="bg-white border-blue-100 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <BookOpen className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.activeTests}</p>
-                  <p className="text-xs text-slate-500">Active</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{stats.activeTests}</p>
+                  <p className="text-xs text-slate-500 truncate">Active Tests</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="bg-white border-blue-100 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.completedTests}</p>
-                  <p className="text-xs text-slate-500">Completed</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{stats.completedTests}</p>
+                  <p className="text-xs text-slate-500 truncate">Completed</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="bg-white border-blue-100 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <BarChart3 className="h-8 w-8 text-emerald-500" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{stats.averageScore.toFixed(0)}%</p>
-                  <p className="text-xs text-slate-500">Avg Score</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{stats.averageScore.toFixed(0)}%</p>
+                  <p className="text-xs text-slate-500 truncate">Avg Score</p>
                 </div>
               </div>
             </CardContent>

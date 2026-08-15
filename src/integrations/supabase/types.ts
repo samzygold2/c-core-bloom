@@ -35,8 +35,42 @@ export type Database = {
         }
         Relationships: []
       }
+      jamb_integrity_audit_log: {
+        Row: {
+          actions_taken: Json | null
+          anomalies: Json
+          duration_ms: number | null
+          health_score: number
+          id: string
+          run_at: string
+          run_by: string | null
+          trigger_source: string
+        }
+        Insert: {
+          actions_taken?: Json | null
+          anomalies: Json
+          duration_ms?: number | null
+          health_score: number
+          id?: string
+          run_at?: string
+          run_by?: string | null
+          trigger_source?: string
+        }
+        Update: {
+          actions_taken?: Json | null
+          anomalies?: Json
+          duration_ms?: number | null
+          health_score?: number
+          id?: string
+          run_at?: string
+          run_by?: string | null
+          trigger_source?: string
+        }
+        Relationships: []
+      }
       jamb_sync_jobs: {
         Row: {
+          consecutive_failures: number
           created_at: string
           current_page: number
           current_subject: string | null
@@ -52,11 +86,13 @@ export type Database = {
           started_by: string | null
           status: string
           subjects: string[]
+          task_retry_counts: Json
           total_per_call: number
           updated_at: string
           years: number[]
         }
         Insert: {
+          consecutive_failures?: number
           created_at?: string
           current_page?: number
           current_subject?: string | null
@@ -72,11 +108,13 @@ export type Database = {
           started_by?: string | null
           status?: string
           subjects: string[]
+          task_retry_counts?: Json
           total_per_call?: number
           updated_at?: string
           years: number[]
         }
         Update: {
+          consecutive_failures?: number
           created_at?: string
           current_page?: number
           current_subject?: string | null
@@ -92,6 +130,7 @@ export type Database = {
           started_by?: string | null
           status?: string
           subjects?: string[]
+          task_retry_counts?: Json
           total_per_call?: number
           updated_at?: string
           years?: number[]
@@ -161,16 +200,20 @@ export type Database = {
       past_questions: {
         Row: {
           aloc_id: string
+          content_hash: string | null
           correct_answer: string | null
           created_at: string
           exam_type: string | null
           explanation: string | null
           id: string
           image_url: string | null
+          is_quarantined: boolean
+          needs_review: boolean
           option_a: string | null
           option_b: string | null
           option_c: string | null
           option_d: string | null
+          quarantine_reason: string | null
           question_text: string
           subject: string
           updated_at: string
@@ -178,16 +221,20 @@ export type Database = {
         }
         Insert: {
           aloc_id: string
+          content_hash?: string | null
           correct_answer?: string | null
           created_at?: string
           exam_type?: string | null
           explanation?: string | null
           id?: string
           image_url?: string | null
+          is_quarantined?: boolean
+          needs_review?: boolean
           option_a?: string | null
           option_b?: string | null
           option_c?: string | null
           option_d?: string | null
+          quarantine_reason?: string | null
           question_text: string
           subject: string
           updated_at?: string
@@ -195,16 +242,20 @@ export type Database = {
         }
         Update: {
           aloc_id?: string
+          content_hash?: string | null
           correct_answer?: string | null
           created_at?: string
           exam_type?: string | null
           explanation?: string | null
           id?: string
           image_url?: string | null
+          is_quarantined?: boolean
+          needs_review?: boolean
           option_a?: string | null
           option_b?: string | null
           option_c?: string | null
           option_d?: string | null
+          quarantine_reason?: string | null
           question_text?: string
           subject?: string
           updated_at?: string
@@ -309,6 +360,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "past_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_visibility_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "past_questions_clean"
             referencedColumns: ["id"]
           },
         ]
@@ -546,6 +604,72 @@ export type Database = {
         }
         Relationships: []
       }
+      past_questions_clean: {
+        Row: {
+          aloc_id: string | null
+          content_hash: string | null
+          correct_answer: string | null
+          created_at: string | null
+          exam_type: string | null
+          explanation: string | null
+          id: string | null
+          image_url: string | null
+          is_quarantined: boolean | null
+          needs_review: boolean | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          quarantine_reason: string | null
+          question_text: string | null
+          subject: string | null
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          aloc_id?: string | null
+          content_hash?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          exam_type?: string | null
+          explanation?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_quarantined?: boolean | null
+          needs_review?: boolean | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          quarantine_reason?: string | null
+          question_text?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          aloc_id?: string | null
+          content_hash?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          exam_type?: string | null
+          explanation?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_quarantined?: boolean | null
+          needs_review?: boolean | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          quarantine_reason?: string | null
+          question_text?: string | null
+          subject?: string | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       user_questions: {
         Row: {
           created_at: string | null
@@ -584,6 +708,7 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_otps: { Args: never; Returns: undefined }
+      get_database_storage_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -591,6 +716,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      jamb_resolve_integrity_issues: { Args: never; Returns: Json }
+      jamb_run_integrity_audit: { Args: never; Returns: Json }
       score_test: {
         Args: { p_test_session_id: string; p_user_answers: Json }
         Returns: Json

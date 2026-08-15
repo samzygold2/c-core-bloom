@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,17 +37,7 @@ const Admin = () => {
     setSearchParams({ tab: value });
   };
 
-  useEffect(() => {
-    if (authLoading || adminLoading) return;
-    if (!user) { navigate('/auth'); return; }
-    if (!isAdmin) { navigate('/dashboard'); }
-  }, [user, isAdmin, authLoading, adminLoading, navigate]);
-
-  useEffect(() => {
-    if (user && isAdmin) { fetchAdminStats(); }
-  }, [user, isAdmin]);
-
-  const fetchAdminStats = async () => {
+  const fetchAdminStats = useCallback(async () => {
     if (!user) return;
     // Get assigned user IDs first, then count their completed exams
     const [assignedRes, activeTestsRes, questionsRes] = await Promise.all([
@@ -80,7 +70,19 @@ const Admin = () => {
       totalQuestions: questionsRes.count || 0,
       completedExams: completedCount,
     });
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading || adminLoading) return;
+    if (!user) { navigate('/auth'); return; }
+    if (!isAdmin) { navigate('/dashboard'); }
+  }, [user, isAdmin, authLoading, adminLoading, navigate]);
+
+  useEffect(() => {
+    if (user && isAdmin) {
+      fetchAdminStats();
+    }
+  }, [user, isAdmin, fetchAdminStats]);
 
   if (authLoading || adminLoading || !isAdmin) {
     return (

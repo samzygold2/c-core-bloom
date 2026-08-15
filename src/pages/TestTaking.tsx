@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,60 +41,52 @@ const TestTaking = () => {
   const [answers, setAnswers] = useState<Record<string, number>>({}); // Stores ORIGINAL indices
   const [loading, setLoading] = useState(true);
   const [userTestId, setUserTestId] = useState<string>('');
+  const [sessionStartTime, setSessionStartTime] = useState<number | undefined>(undefined);
 
+  // Auto-save test session to localStorage as answers, question, or session changes
   useEffect(() => {
-    // Wait for auth to finish loading before redirecting
-    if (authLoading) return;
-    
-    if (!user || !testId) {
-      navigate('/auth');
-      return;
-    }
-    
-    checkUserApprovalAndInit();
-  }, [user, testId, authLoading, navigate]);
+    if (loading || !user || !testId || !userTestId) return;
+    const sessionData = {
+      userTestId,
+      startTime: sessionStartTime || Date.now(),
+      questions,
+      answers,
+      currentQuestionIndex,
+    };
+    localStorage.setItem(`jamb_test_session_${testId}_${user.id}`, JSON.stringify(sessionData));
+  }, [answers, currentQuestionIndex, questions, userTestId, testId, user, loading, sessionStartTime]);
 
-  const checkUserApprovalAndInit = async () => {
-    // Check if user is approved (not pending and not waiting)
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('is_pending, is_waiting')
-      .eq('id', user!.id)
-      .single();
-
-    if (error || !profile) {
+  // Connection lost / Connection restored listeners
+  useEffect(() => {
+    const handleOnline = () => {
       toast({
-        title: 'Error',
-        description: 'Failed to verify user status',
+        title: 'Connection Restored',
+        description: 'You are back online. Your test progress is fully synced!',
+      });
+    };
+
+    const handleOffline = () => {
+      toast({
+        title: 'Connection Lost',
+        description: 'You are offline. Your answers are saved locally and will be restored upon reconnection.',
         variant: 'destructive',
       });
-      navigate('/dashboard');
-      return;
-    }
+    };
 
-    if (profile.is_pending || profile.is_waiting) {
-      toast({
-        title: 'Access Denied',
-        description: 'Your account must be approved before taking tests',
-        variant: 'destructive',
-      });
-      navigate('/dashboard');
-      return;
-    }
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
-    initializeTest();
-  };
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast]);
 
-  // Show loading spinner while auth is loading
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const initializeTest = useCallback(async () => {
+    if (!user || !testId) return;
+    const savedSessionKey = `jamb_test_session_${testId}_${user.id}`;
+    const savedSessionStr = localStorage.getItem(savedSessionKey);
 
-  const initializeTest = async () => {
     const { data: testData, error: testError } = await supabase
       .from('tests')
       .select('*')
@@ -109,6 +101,36 @@ const TestTaking = () => {
       });
       navigate('/dashboard');
       return;
+    }
+
+    if (savedSessionStr) {
+      try {
+        const savedSession = JSON.parse(savedSessionStr);
+        if (savedSession && savedSession.userTestId) {
+          const elapsedSeconds = Math.floor((Date.now() - savedSession.startTime) / 1000);
+          const remaining = (testData.duration_minutes * 60) - elapsedSeconds;
+          
+          if (remaining > 0) {
+            setTest(testData);
+            setQuestions(savedSession.questions || []);
+            setAnswers(savedSession.answers || {});
+            setCurrentQuestionIndex(savedSession.currentQuestionIndex || 0);
+            setUserTestId(savedSession.userTestId);
+            setSessionStartTime(savedSession.startTime);
+            setLoading(false);
+            
+            toast({
+              title: 'Session Restored',
+              description: 'Your previous test session has been successfully restored.',
+            });
+            return;
+          } else {
+            localStorage.removeItem(savedSessionKey);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to restore saved session:', e);
+      }
     }
 
     const { data: questionsData, error: questionsError } = await supabase
@@ -145,10 +167,11 @@ const TestTaking = () => {
         };
       });
 
+    const now = Date.now();
     const { data: userTest, error: userTestError } = await supabase
       .from('user_tests')
       .insert({
-        user_id: user!.id,
+        user_id: user.id,
         test_id: testId,
         answers: {},
       })
@@ -168,8 +191,62 @@ const TestTaking = () => {
     setTest(testData);
     setQuestions(shuffledQuestions);
     setUserTestId(userTest.id);
+    setSessionStartTime(now);
     setLoading(false);
-  };
+  }, [user, testId, navigate, toast]);
+
+  const checkUserApprovalAndInit = useCallback(async () => {
+    if (!user) return;
+    // Check if user is approved (not pending and not waiting)
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('is_pending, is_waiting')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !profile) {
+      toast({
+        title: 'Error',
+        description: 'Failed to verify user status',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    if (profile.is_pending || profile.is_waiting) {
+      toast({
+        title: 'Access Denied',
+        description: 'Your account must be approved before taking tests',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    initializeTest();
+  }, [user, navigate, toast, initializeTest]);
+
+  useEffect(() => {
+    // Wait for auth to finish loading before redirecting
+    if (authLoading) return;
+    
+    if (!user || !testId) {
+      navigate('/auth');
+      return;
+    }
+    
+    checkUserApprovalAndInit();
+  }, [user, testId, authLoading, navigate, checkUserApprovalAndInit]);
+
+  // Show loading spinner while auth is loading
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const handleAnswerSelect = (questionId: string, originalIndex: number) => {
     setAnswers((prev) => ({
@@ -190,16 +267,20 @@ const TestTaking = () => {
 
       if (error) throw error;
 
+      // Clear local storage session on successful submission!
+      localStorage.removeItem(`jamb_test_session_${testId}_${user!.id}`);
+
       toast({
         title: 'Success',
         description: `Test submitted successfully!`,
       });
       
       navigate(`/results/${userTestId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to submit test';
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to submit test',
+        description: errorMsg,
         variant: 'destructive',
       });
     }
@@ -234,7 +315,7 @@ const TestTaking = () => {
               Question {currentQuestionIndex + 1} of {questions.length}
             </p>
           </div>
-          {test && <TestTimer durationMinutes={test.duration_minutes} onTimeUp={handleSubmit} />}
+          {test && <TestTimer durationMinutes={test.duration_minutes} onTimeUp={handleSubmit} startTime={sessionStartTime} />}
         </div>
 
         <Progress value={progress} className="mb-4 sm:mb-6" />

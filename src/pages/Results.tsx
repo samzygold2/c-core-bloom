@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +17,7 @@ interface UserTest {
   tests: {
     title: string;
     total_questions: number;
-  };
+  } | null;
 }
 
 const Results = () => {
@@ -26,11 +26,26 @@ const Results = () => {
   const [results, setResults] = useState<UserTest[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchResults = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('user_tests')
+      .select(`id, score, start_time, end_time, tests (title, total_questions)`)
+      .eq('user_id', user.id)
+      .not('score', 'is', null)
+      .order('start_time', { ascending: false });
+
+    if (!error && data) {
+      setResults(data as unknown as UserTest[]);
+    }
+    setLoading(false);
+  }, [user]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate('/auth'); return; }
     fetchResults();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, fetchResults]);
 
   if (authLoading) {
     return (
@@ -39,20 +54,6 @@ const Results = () => {
       </div>
     );
   }
-
-  const fetchResults = async () => {
-    const { data, error } = await supabase
-      .from('user_tests')
-      .select(`id, score, start_time, end_time, tests (title, total_questions)`)
-      .eq('user_id', user!.id)
-      .not('score', 'is', null)
-      .order('start_time', { ascending: false });
-
-    if (!error && data) {
-      setResults(data as any);
-    }
-    setLoading(false);
-  };
 
   const getScoreVariant = (score: number, total: number): 'default' | 'secondary' | 'destructive' => {
     const percentage = (score / total) * 100;

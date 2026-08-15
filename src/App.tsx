@@ -17,6 +17,7 @@ import Admin from "./pages/Admin";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import JambPractice from "./pages/JambPractice";
 import SuperAdmin from "./pages/SuperAdmin";
+import GoogleDrive from "./pages/GoogleDrive";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/jamb" element={<JambPractice />} />
             <Route path="/super-admin" element={<SuperAdmin />} />
+            <Route path="/drive" element={<GoogleDrive />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

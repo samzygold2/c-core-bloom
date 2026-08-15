@@ -16,7 +16,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
-import { BarChart3, Settings, Shield, LogOut, Home, User as UserIcon, GraduationCap } from 'lucide-react';
+import { BarChart3, Settings, Shield, LogOut, Home, User as UserIcon, GraduationCap, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { UserSettingsDialog } from '@/components/UserSettingsDialog';
@@ -56,6 +56,7 @@ export function AppSidebar() {
     { title: 'Dashboard', url: '/dashboard', icon: Home },
     { title: 'JAMB Practice', url: '/jamb', icon: GraduationCap },
     { title: 'My Results', url: '/results', icon: BarChart3 },
+    { title: 'Google Drive', url: '/drive', icon: Cloud },
   ];
 
   const adminItems = [

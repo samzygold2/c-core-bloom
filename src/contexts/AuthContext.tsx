@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,11 +9,11 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   adminLoading: boolean;
-  signUp: (email: string, password: string, firstname: string, lastname: string) => Promise<{ error: any; data: any }>;
-  signUpAdmin: (email: string, password: string, firstname: string, lastname: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstname: string, lastname: string) => Promise<{ error: AuthError | null; data: unknown }>;
+  signUpAdmin: (email: string, password: string, firstname: string, lastname: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
