@@ -708,6 +708,7 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_otps: { Args: never; Returns: undefined }
+      get_database_storage_stats: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
