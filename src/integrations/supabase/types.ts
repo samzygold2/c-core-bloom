@@ -707,6 +707,15 @@ export type Database = {
       }
     }
     Functions: {
+      approve_all_jamb_questions: {
+        Args: {
+          specific_subject?: string
+          specific_year?: number
+          target_admin_id?: string
+        }
+        Returns: Json
+      }
+      audit_jamb_integrity: { Args: never; Returns: Json }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       get_database_storage_stats: { Args: never; Returns: Json }
       has_role: {
