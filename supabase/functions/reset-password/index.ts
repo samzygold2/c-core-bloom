@@ -221,12 +221,14 @@ serve(async (req) => {
         }
 
         // Verify OTP
-        if (otpData.otp_hash !== otp) {
+        // Verify OTP against stored hash
+        if (otpData.otp_hash !== await hashOtp(otp)) {
           return new Response(
             JSON.stringify({ error: 'Invalid OTP' }),
             { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+
 
         // Update password
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
