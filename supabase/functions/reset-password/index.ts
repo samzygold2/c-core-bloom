@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Hash OTPs with SHA-256 so plaintext codes are never stored
+async function hashOtp(otp: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(otp));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -140,10 +147,11 @@ serve(async (req) => {
           .from('password_reset_otps')
           .insert({
             user_id: targetUserId,
-            otp_hash: otp, // In production, hash this
+            otp_hash: await hashOtp(otp),
             expires_at: expiresAt,
             generated_by: user.id
           });
+
 
         if (otpError) {
           console.error('[reset-password] OTP insert error:', otpError);
@@ -221,12 +229,14 @@ serve(async (req) => {
         }
 
         // Verify OTP
-        if (otpData.otp_hash !== otp) {
+        // Verify OTP against stored hash
+        if (otpData.otp_hash !== await hashOtp(otp)) {
           return new Response(
             JSON.stringify({ error: 'Invalid OTP' }),
             { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+
 
         // Update password
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
