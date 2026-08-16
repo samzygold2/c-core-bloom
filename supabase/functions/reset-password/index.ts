@@ -140,10 +140,11 @@ serve(async (req) => {
           .from('password_reset_otps')
           .insert({
             user_id: targetUserId,
-            otp_hash: otp, // In production, hash this
+            otp_hash: await hashOtp(otp),
             expires_at: expiresAt,
             generated_by: user.id
           });
+
 
         if (otpError) {
           console.error('[reset-password] OTP insert error:', otpError);
