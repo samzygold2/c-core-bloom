@@ -365,7 +365,7 @@ const SuperAdmin = () => {
       return;
     }
 
-    setSystemLogs(logs || []);
+    setSystemLogs((logs || []) as unknown as SystemLog[]);
   };
 
   const fetchUsers = async () => {

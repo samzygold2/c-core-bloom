@@ -149,7 +149,7 @@ export function SuperAdminJambMonitor() {
         const { count: pqCount } = await supabase.from('past_questions').select('*', { count: 'exact', head: true });
         const { count: visCount } = await supabase.from('question_visibility').select('*', { count: 'exact', head: true });
         const { count: jobsCount } = await supabase.from('jamb_sync_jobs').select('*', { count: 'exact', head: true });
-        const { count: subCount } = await supabase.from('test_submissions').select('*', { count: 'exact', head: true });
+        const { count: subCount } = await supabase.from('user_tests').select('*', { count: 'exact', head: true });
         
         const totalQuestions = pqCount || 0;
         const pct = Math.min(100, Number(((totalQuestions / 5000) * 100).toFixed(1)));
@@ -355,7 +355,7 @@ export function SuperAdminJambMonitor() {
     let totalUserPracticeAttempts = 0;
     try {
       const { count } = await supabase
-        .from('test_submissions')
+        .from('user_tests')
         .select('id', { count: 'exact', head: true });
       totalUserPracticeAttempts = count || 0;
     } catch {
