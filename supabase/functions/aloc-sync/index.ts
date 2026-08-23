@@ -304,15 +304,34 @@ Deno.serve(async (req) => {
               });
             }
             if (rows.length) {
-              // Direct insertion without deduplication blocking
-              const { error: insertErr, data: insertData } = await admin
+              // Direct insertion without deduplication blocking.
+              // If the batch fails, fall back to row-by-row so a single bad
+              // question cannot discard the rest of the API response.
+              let insertData: { id: string }[] | null = null;
+              const { error: insertErr, data: batchData } = await admin
                 .from('past_questions')
                 .insert(rows)
                 .select('id');
               if (insertErr) {
-                failed++;
-                errors.push(`${subject}/${year} p${page}: ${insertErr.message}`);
-              } else if (insertData) {
+                const salvaged: { id: string }[] = [];
+                for (const row of rows) {
+                  const { data: oneData, error: oneErr } = await admin
+                    .from('past_questions')
+                    .insert(row)
+                    .select('id')
+                    .maybeSingle();
+                  if (oneErr) {
+                    failed++;
+                    errors.push(`${subject}/${year} p${page} [${row.aloc_id}]: ${oneErr.message}`);
+                  } else if (oneData) {
+                    salvaged.push(oneData as { id: string });
+                  }
+                }
+                insertData = salvaged;
+              } else {
+                insertData = batchData as { id: string }[] | null;
+              }
+              if (insertData && insertData.length) {
                 inserted += insertData.length;
 
                 // Automatically approve synced questions for all admins and super_admins
