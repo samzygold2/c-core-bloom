@@ -37,6 +37,7 @@ import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
 import AdminPasswordResetManager from '@/components/admin/AdminPasswordResetManager';
 import AdminActivityMonitor from '@/components/admin/AdminActivityMonitor';
 import { SuperAdminJambSync } from '@/components/admin/SuperAdminJambSync';
+import DatabaseDashboard from '@/components/admin/DatabaseDashboard';
 
 interface AuditLog {
   id: string;
