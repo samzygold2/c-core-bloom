@@ -37,6 +37,7 @@ import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
 import AdminPasswordResetManager from '@/components/admin/AdminPasswordResetManager';
 import AdminActivityMonitor from '@/components/admin/AdminActivityMonitor';
 import { SuperAdminJambSync } from '@/components/admin/SuperAdminJambSync';
+import DatabaseDashboard from '@/components/admin/DatabaseDashboard';
 
 interface AuditLog {
   id: string;
@@ -843,6 +844,10 @@ const SuperAdmin = () => {
               <GraduationCap className="h-4 w-4 mr-2" />
               JAMB Sync
             </TabsTrigger>
+            <TabsTrigger value="database" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <Activity className="h-4 w-4 mr-2" />
+              Database
+            </TabsTrigger>
           </TabsList>
 
 
@@ -1135,6 +1140,10 @@ const SuperAdmin = () => {
 
           <TabsContent value="jamb">
             <SuperAdminJambSync />
+          </TabsContent>
+
+          <TabsContent value="database">
+            <DatabaseDashboard />
           </TabsContent>
         </Tabs>
       </main>
