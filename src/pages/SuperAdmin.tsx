@@ -844,6 +844,10 @@ const SuperAdmin = () => {
               <GraduationCap className="h-4 w-4 mr-2" />
               JAMB Sync
             </TabsTrigger>
+            <TabsTrigger value="database" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <Activity className="h-4 w-4 mr-2" />
+              Database
+            </TabsTrigger>
           </TabsList>
 
 
@@ -1136,6 +1140,10 @@ const SuperAdmin = () => {
 
           <TabsContent value="jamb">
             <SuperAdminJambSync />
+          </TabsContent>
+
+          <TabsContent value="database">
+            <DatabaseDashboard />
           </TabsContent>
         </Tabs>
       </main>
