@@ -196,18 +196,19 @@ export function SuperAdminJambSync() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => invoke({ action: 'start', total: 40, pages: 5, target_count: 5000 }, '5,000 Qs Sync started')} disabled={busy || isRunning} className="bg-blue-600 hover:bg-blue-700">
-                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                  Start 5,000 Qs Sync
+                <Button onClick={quickSync} disabled={busy || isRunning} className="bg-blue-600 hover:bg-blue-700">
+                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+                  Quick Sync (missing questions)
                 </Button>
-                <Button onClick={() => invoke({ action: 'start', total: 40, pages: 1, target_count: 1000 }, '1,000 Qs Quick Sync started')} disabled={busy || isRunning} variant="outline">
-                  1,000 Qs Quick Sync
-                </Button>
-                <Button onClick={() => invoke({ action: 'start', total: 40, pages: 10, target_count: 10000 }, '10,000 Qs Max Sync started')} disabled={busy || isRunning} variant="outline">
-                  10,000 Qs Max Sync
+                <Button onClick={() => setAdvancedOpen(true)} disabled={busy || isRunning} variant="outline">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" /> Advanced Sync
                 </Button>
                 <Button onClick={() => invoke({ action: 'resume' }, 'Sync resumed')} disabled={busy || isRunning || !canResume} variant="outline">
                   <Play className="h-4 w-4 mr-2" /> Resume last
+                </Button>
+                <Button onClick={testApi} disabled={testing} variant="outline">
+                  {testing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Activity className="h-4 w-4 mr-2" />}
+                  Test ALOC API
                 </Button>
                 <Button onClick={activateAllQuestions} disabled={activating} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                   {activating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
@@ -215,6 +216,13 @@ export function SuperAdminJambSync() {
                 </Button>
                 <Button onClick={loadLatest} variant="ghost" disabled={busy}>Refresh status</Button>
               </div>
+
+              {apiTest && (
+                <div className={`text-xs rounded-lg border p-2.5 ${apiTest.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                  {apiTest.message}
+                </div>
+              )}
+
 
               {job && (
                 <div className="space-y-2 rounded border p-3 bg-slate-50">
