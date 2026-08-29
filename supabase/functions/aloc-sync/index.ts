@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     if (!isSuper) return json({ error: 'Forbidden: super admin only' }, 403);
 
     const body = await req.json().catch(() => ({}));
-    const action: string = body.action ?? 'start'; // start | resume | status
+    const action: string = body.action ?? 'start'; // start | resume | status | test
 
     if (action === 'status') {
       const { data } = await admin
@@ -59,6 +59,34 @@ Deno.serve(async (req) => {
         .maybeSingle();
       return json({ success: true, job: data }, 200);
     }
+
+    // Health-check the ALOC API with a single small request.
+    if (action === 'test') {
+      const started = Date.now();
+      try {
+        const url = `${ALOC_BASE}/q/2?subject=mathematics&year=2015&type=utme`;
+        const resp = await fetch(url, { headers: { 'AccessToken': token, 'Accept': 'application/json' } });
+        const text = await resp.text();
+        let count = 0;
+        try {
+          const parsed = JSON.parse(text);
+          count = Array.isArray(parsed?.data) ? parsed.data.length : (parsed?.data ? 1 : 0);
+        } catch { /* non-JSON body */ }
+        return json({
+          success: resp.ok && count > 0,
+          http_status: resp.status,
+          questions_returned: count,
+          latency_ms: Date.now() - started,
+          message: resp.ok
+            ? (count > 0 ? `ALOC API is working (${count} sample questions in ${Date.now() - started}ms).` : 'ALOC API responded but returned no questions.')
+            : `ALOC API returned HTTP ${resp.status}.`,
+          sample: text.slice(0, 400),
+        }, 200);
+      } catch (e: unknown) {
+        return json({ success: false, message: `ALOC API unreachable: ${e instanceof Error ? e.message : String(e)}` }, 200);
+      }
+    }
+
 
     // Auto-mark stale "running" jobs (no progress for 60s) as failed so they're resumable.
     await admin
