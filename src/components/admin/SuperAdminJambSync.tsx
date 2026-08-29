@@ -233,11 +233,12 @@ export function SuperAdminJambSync() {
 
         <TabsContent value="sync" className="mt-4 space-y-6">
           <Card className="bg-white border-blue-100">
-            <CardHeader><CardTitle className="text-slate-800">JAMB ALOC Sync (5,000+ Questions Pipeline)</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-slate-800">JAMB ALOC Sync</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-slate-600">
-                Pulls past questions across 15 JAMB UTME subjects × 16 years (2009–2024). Default pipeline configuration syncs up to <strong>5,000+ past questions</strong> across 5 depth pages per subject/year. Progress is saved continuously so if the sync stops, you can resume at any time.
+                <strong>Quick Sync</strong> automatically fills in every subject/year combination (2009–{CURRENT_YEAR}) that is missing questions. <strong>Advanced Sync</strong> lets you pick exact years and subjects. <strong>Resume last</strong> continues an interrupted run from where it stopped.
               </p>
+
 
               <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
