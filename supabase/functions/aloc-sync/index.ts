@@ -115,11 +115,13 @@ Deno.serve(async (req) => {
         .update({ status: 'failed', message: 'Superseded by new sync' })
         .eq('status', 'running');
 
+      const currentYear = new Date().getFullYear();
+      const allYears = Array.from({ length: currentYear - 2009 + 1 }, (_, i) => 2009 + i);
       const subjects: string[] = body.subjects?.length ? body.subjects : SUBJECTS;
-      const years: number[] = body.years?.length ? body.years : Array.from({length: 16}, (_,i) => 2009 + i);
+      const years: number[] = body.years?.length ? body.years.map(Number) : allYears;
       const total: number = Math.min(Math.max(body.total ?? 40, 1), 40);
-      
-      // Default to 5 pages per subject/year to hit 5,000+ target questions across 15 subjects x 16 years
+
+      // Default to 5 pages per subject/year to hit 5,000+ target questions
       let defaultPages = 5;
       if (body.target_count === 1000 || body.targetQuestions === 1000) {
         defaultPages = 1;
@@ -128,22 +130,48 @@ Deno.serve(async (req) => {
       } else if (body.target_count === 10000 || body.targetQuestions === 10000) {
         defaultPages = 10;
       }
-      
+
       const pages: number = Math.min(Math.max(body.pages ?? defaultPages, 1), 15);
+
+      // Quick sync (mode: 'missing') targets only subject/year pairs that are
+      // empty or below the expected question count.
+      let pairs: { subject: string; year: number }[] | null = null;
+      if (body.mode === 'missing') {
+        const minPerPair: number = Math.max(1, body.min_per_pair ?? total);
+        const counts = new Map<string, number>();
+        const { data: countRows } = await admin.rpc('jamb_question_counts');
+        for (const r of (countRows ?? []) as { subject: string; year: number; cnt: number }[]) {
+          counts.set(`${String(r.subject).toLowerCase()}:${r.year}`, Number(r.cnt));
+        }
+        pairs = [];
+        for (const s of subjects) {
+          for (const y of years) {
+            if ((counts.get(`${s.toLowerCase()}:${y}`) ?? 0) < minPerPair) pairs.push({ subject: s, year: y });
+          }
+        }
+        if (pairs.length === 0) {
+          return json({ success: true, status: 'nothing_to_sync', message: 'No missing questions found — every subject/year already has questions.' }, 200);
+        }
+      }
+
+      const firstSubject = pairs ? pairs[0].subject : subjects[0];
+      const firstYear = pairs ? pairs[0].year : years[0];
+
       const { data: created, error: cErr } = await admin
         .from('jamb_sync_jobs')
         .insert({
           status: 'running',
-          subjects, years,
+          subjects, years, pairs,
           total_per_call: total, pages,
-          current_subject: subjects[0], current_year: years[0], current_page: 0,
+          current_subject: firstSubject, current_year: firstYear, current_page: 0,
           started_by: userData.user.id,
-          message: 'Started',
+          message: pairs ? `Quick sync: ${pairs.length} missing subject/year combinations` : 'Started',
         })
         .select('*')
         .single();
       if (cErr) throw cErr;
       job = created as unknown as SyncJob;
+
     } else {
       await admin.from('jamb_sync_jobs').update({ status: 'running', message: 'Resumed' }).eq('id', job.id);
     }
