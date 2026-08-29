@@ -40,8 +40,16 @@ type Job = {
 export function SuperAdminJambSync() {
   const [busy, setBusy] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [apiTest, setApiTest] = useState<{ ok: boolean; message: string } | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [selYears, setSelYears] = useState<number[]>([CURRENT_YEAR - 1, CURRENT_YEAR]);
+  const [selSubjects, setSelSubjects] = useState<string[]>(['mathematics', 'english']);
+  const [advPages, setAdvPages] = useState(5);
   const [job, setJob] = useState<Job | null>(null);
   const pollRef = useRef<number | null>(null);
+
+
 
 
   const loadLatest = async () => {
