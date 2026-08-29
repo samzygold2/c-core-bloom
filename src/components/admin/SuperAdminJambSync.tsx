@@ -81,6 +81,40 @@ export function SuperAdminJambSync() {
     loadLatest();
   };
 
+  // Quick Sync: fills in every subject/year combination that has no (or too few) questions.
+  const quickSync = () =>
+    invoke({ action: 'start', mode: 'missing', total: 40, pages: 3, min_per_pair: 40 }, 'Quick Sync started');
+
+  const startAdvancedSync = async () => {
+    if (!selYears.length || !selSubjects.length) {
+      toast({ title: 'Select at least one year and one subject', variant: 'destructive' });
+      return;
+    }
+    setAdvancedOpen(false);
+    await invoke(
+      { action: 'start', subjects: selSubjects, years: selYears, total: 40, pages: advPages },
+      'Advanced Sync started',
+    );
+  };
+
+  const testApi = async () => {
+    setTesting(true);
+    setApiTest(null);
+    const { data, error } = await supabase.functions.invoke('aloc-sync', { body: { action: 'test' } });
+    setTesting(false);
+    if (error) {
+      setApiTest({ ok: false, message: `API test failed: ${error.message}` });
+      toast({ title: 'ALOC API test failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const ok = !!data?.success;
+    setApiTest({ ok, message: data?.message ?? (ok ? 'ALOC API is working.' : 'ALOC API is not responding correctly.') });
+    toast({ title: ok ? 'ALOC API is working' : 'ALOC API problem', description: data?.message ?? '' , variant: ok ? undefined : 'destructive' });
+  };
+
+  const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+
+
   const activateAllQuestions = async () => {
     setActivating(true);
     try {
