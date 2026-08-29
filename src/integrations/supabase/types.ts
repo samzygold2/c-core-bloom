@@ -728,6 +728,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      jamb_question_counts: {
+        Args: never
+        Returns: {
+          cnt: number
+          subject: string
+          year: number
+        }[]
+      }
       jamb_resolve_integrity_issues: { Args: never; Returns: Json }
       jamb_run_integrity_audit: { Args: never; Returns: Json }
       score_test: {
