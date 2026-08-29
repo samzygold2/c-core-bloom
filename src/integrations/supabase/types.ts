@@ -82,6 +82,7 @@ export type Database = {
           inserted: number
           message: string | null
           pages: number
+          pairs: Json | null
           started_at: string
           started_by: string | null
           status: string
@@ -104,6 +105,7 @@ export type Database = {
           inserted?: number
           message?: string | null
           pages?: number
+          pairs?: Json | null
           started_at?: string
           started_by?: string | null
           status?: string
@@ -126,6 +128,7 @@ export type Database = {
           inserted?: number
           message?: string | null
           pages?: number
+          pairs?: Json | null
           started_at?: string
           started_by?: string | null
           status?: string
