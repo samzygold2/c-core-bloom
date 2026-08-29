@@ -13,6 +13,7 @@ interface SyncJob {
   years: number[];
   total_per_call: number;
   pages: number;
+  pairs?: { subject: string; year: number }[] | null;
   current_subject: string | null;
   current_year: number | null;
   current_page: number | null;
