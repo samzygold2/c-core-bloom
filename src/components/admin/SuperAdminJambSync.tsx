@@ -4,10 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle2, Loader2, Play, RefreshCw, Activity, ShieldCheck, Database } from 'lucide-react';
+import { CheckCircle2, Loader2, Play, RefreshCw, Activity, ShieldCheck, Database, Zap, SlidersHorizontal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { SuperAdminJambManager } from './SuperAdminJambManager';
 import { SuperAdminJambMonitor } from './SuperAdminJambMonitor';
+
+const ALL_SUBJECTS = ['mathematics','english','chemistry','physics','biology','economics','literature-in-english','accounting','government','commerce','geography','crk','irk','civic-education','history'];
+const CURRENT_YEAR = new Date().getFullYear();
+const ALL_YEARS = Array.from({ length: CURRENT_YEAR - 2009 + 1 }, (_, i) => 2009 + i);
+
 
 
 type Job = {
@@ -31,8 +40,16 @@ type Job = {
 export function SuperAdminJambSync() {
   const [busy, setBusy] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [apiTest, setApiTest] = useState<{ ok: boolean; message: string } | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [selYears, setSelYears] = useState<number[]>([CURRENT_YEAR - 1, CURRENT_YEAR]);
+  const [selSubjects, setSelSubjects] = useState<string[]>(['mathematics', 'english']);
+  const [advPages, setAdvPages] = useState(5);
   const [job, setJob] = useState<Job | null>(null);
   const pollRef = useRef<number | null>(null);
+
+
 
 
   const loadLatest = async () => {
@@ -63,6 +80,40 @@ export function SuperAdminJambSync() {
     toast({ title: label, description: data?.message ?? 'OK' });
     loadLatest();
   };
+
+  // Quick Sync: fills in every subject/year combination that has no (or too few) questions.
+  const quickSync = () =>
+    invoke({ action: 'start', mode: 'missing', total: 40, pages: 3, min_per_pair: 40 }, 'Quick Sync started');
+
+  const startAdvancedSync = async () => {
+    if (!selYears.length || !selSubjects.length) {
+      toast({ title: 'Select at least one year and one subject', variant: 'destructive' });
+      return;
+    }
+    setAdvancedOpen(false);
+    await invoke(
+      { action: 'start', subjects: selSubjects, years: selYears, total: 40, pages: advPages },
+      'Advanced Sync started',
+    );
+  };
+
+  const testApi = async () => {
+    setTesting(true);
+    setApiTest(null);
+    const { data, error } = await supabase.functions.invoke('aloc-sync', { body: { action: 'test' } });
+    setTesting(false);
+    if (error) {
+      setApiTest({ ok: false, message: `API test failed: ${error.message}` });
+      toast({ title: 'ALOC API test failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    const ok = !!data?.success;
+    setApiTest({ ok, message: data?.message ?? (ok ? 'ALOC API is working.' : 'ALOC API is not responding correctly.') });
+    toast({ title: ok ? 'ALOC API is working' : 'ALOC API problem', description: data?.message ?? '' , variant: ok ? undefined : 'destructive' });
+  };
+
+  const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+
 
   const activateAllQuestions = async () => {
     setActivating(true);
@@ -182,11 +233,12 @@ export function SuperAdminJambSync() {
 
         <TabsContent value="sync" className="mt-4 space-y-6">
           <Card className="bg-white border-blue-100">
-            <CardHeader><CardTitle className="text-slate-800">JAMB ALOC Sync (5,000+ Questions Pipeline)</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-slate-800">JAMB ALOC Sync</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-slate-600">
-                Pulls past questions across 15 JAMB UTME subjects × 16 years (2009–2024). Default pipeline configuration syncs up to <strong>5,000+ past questions</strong> across 5 depth pages per subject/year. Progress is saved continuously so if the sync stops, you can resume at any time.
+                <strong>Quick Sync</strong> automatically fills in every subject/year combination (2009–{CURRENT_YEAR}) that is missing questions. <strong>Advanced Sync</strong> lets you pick exact years and subjects. <strong>Resume last</strong> continues an interrupted run from where it stopped.
               </p>
+
 
               <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -196,18 +248,19 @@ export function SuperAdminJambSync() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => invoke({ action: 'start', total: 40, pages: 5, target_count: 5000 }, '5,000 Qs Sync started')} disabled={busy || isRunning} className="bg-blue-600 hover:bg-blue-700">
-                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                  Start 5,000 Qs Sync
+                <Button onClick={quickSync} disabled={busy || isRunning} className="bg-blue-600 hover:bg-blue-700">
+                  {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+                  Quick Sync (missing questions)
                 </Button>
-                <Button onClick={() => invoke({ action: 'start', total: 40, pages: 1, target_count: 1000 }, '1,000 Qs Quick Sync started')} disabled={busy || isRunning} variant="outline">
-                  1,000 Qs Quick Sync
-                </Button>
-                <Button onClick={() => invoke({ action: 'start', total: 40, pages: 10, target_count: 10000 }, '10,000 Qs Max Sync started')} disabled={busy || isRunning} variant="outline">
-                  10,000 Qs Max Sync
+                <Button onClick={() => setAdvancedOpen(true)} disabled={busy || isRunning} variant="outline">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" /> Advanced Sync
                 </Button>
                 <Button onClick={() => invoke({ action: 'resume' }, 'Sync resumed')} disabled={busy || isRunning || !canResume} variant="outline">
                   <Play className="h-4 w-4 mr-2" /> Resume last
+                </Button>
+                <Button onClick={testApi} disabled={testing} variant="outline">
+                  {testing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Activity className="h-4 w-4 mr-2" />}
+                  Test ALOC API
                 </Button>
                 <Button onClick={activateAllQuestions} disabled={activating} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                   {activating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
@@ -215,6 +268,13 @@ export function SuperAdminJambSync() {
                 </Button>
                 <Button onClick={loadLatest} variant="ghost" disabled={busy}>Refresh status</Button>
               </div>
+
+              {apiTest && (
+                <div className={`text-xs rounded-lg border p-2.5 ${apiTest.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                  {apiTest.message}
+                </div>
+              )}
+
 
               {job && (
                 <div className="space-y-2 rounded border p-3 bg-slate-50">
@@ -244,7 +304,77 @@ export function SuperAdminJambSync() {
           <SuperAdminJambManager />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={advancedOpen} onOpenChange={setAdvancedOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Advanced Sync</DialogTitle>
+            <DialogDescription>Select the years and subjects you want to pull from the ALOC API.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Years (2009–{CURRENT_YEAR})</Label>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setSelYears(ALL_YEARS)}>Select all</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelYears([])}>Clear</Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {ALL_YEARS.map((y) => (
+                  <label key={y} className="flex items-center gap-2 rounded border p-2 text-sm cursor-pointer hover:bg-accent">
+                    <Checkbox checked={selYears.includes(y)} onCheckedChange={() => setSelYears((p) => toggle(p, y))} />
+                    {y}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Subjects</Label>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setSelSubjects(ALL_SUBJECTS)}>Select all</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelSubjects([])}>Clear</Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {ALL_SUBJECTS.map((s) => (
+                  <label key={s} className="flex items-center gap-2 rounded border p-2 text-sm cursor-pointer hover:bg-accent capitalize">
+                    <Checkbox checked={selSubjects.includes(s)} onCheckedChange={() => setSelSubjects((p) => toggle(p, s))} />
+                    {s.replace(/-/g, ' ')}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 max-w-xs">
+              <Label htmlFor="adv-pages" className="text-sm font-semibold">Pages per subject/year (40 questions each)</Label>
+              <Input
+                id="adv-pages"
+                type="number"
+                min={1}
+                max={15}
+                value={advPages}
+                onChange={(e) => setAdvPages(Math.min(15, Math.max(1, Number(e.target.value) || 1)))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Estimated fetch: {selYears.length * selSubjects.length * advPages * 40} questions
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdvancedOpen(false)}>Cancel</Button>
+            <Button onClick={startAdvancedSync} disabled={busy} className="bg-blue-600 hover:bg-blue-700">
+              <RefreshCw className="h-4 w-4 mr-2" /> Start Advanced Sync
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 

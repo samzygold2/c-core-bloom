@@ -82,6 +82,7 @@ export type Database = {
           inserted: number
           message: string | null
           pages: number
+          pairs: Json | null
           started_at: string
           started_by: string | null
           status: string
@@ -104,6 +105,7 @@ export type Database = {
           inserted?: number
           message?: string | null
           pages?: number
+          pairs?: Json | null
           started_at?: string
           started_by?: string | null
           status?: string
@@ -126,6 +128,7 @@ export type Database = {
           inserted?: number
           message?: string | null
           pages?: number
+          pairs?: Json | null
           started_at?: string
           started_by?: string | null
           status?: string
@@ -724,6 +727,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      jamb_question_counts: {
+        Args: never
+        Returns: {
+          cnt: number
+          subject: string
+          year: number
+        }[]
       }
       jamb_resolve_integrity_issues: { Args: never; Returns: Json }
       jamb_run_integrity_audit: { Args: never; Returns: Json }

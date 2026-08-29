@@ -1,0 +1,1 @@
+ALTER TABLE public.jamb_sync_jobs ADD COLUMN IF NOT EXISTS pairs jsonb;

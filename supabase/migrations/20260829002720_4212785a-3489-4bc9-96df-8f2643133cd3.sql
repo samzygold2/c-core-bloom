@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.jamb_question_counts() FROM authenticated;
