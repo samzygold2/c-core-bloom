@@ -220,16 +220,28 @@ Deno.serve(async (req) => {
       };
 
       // Generate all remaining (subject, year, page) combinations to process
+      const pairs = (j.pairs as { subject: string; year: number }[] | null) ?? null;
       const tasks: { subject: string; year: number; page: number }[] = [];
-      for (let si = startSubjectIdx; si < subjects.length; si++) {
-        const subject = subjects[si];
-        for (let yi = (si === startSubjectIdx ? startYearIdx : 0); yi < years.length; yi++) {
-          const year = years[yi];
-          for (let p = (si === startSubjectIdx && yi === startYearIdx ? startPage : 0); p < pages; p++) {
-            tasks.push({ subject, year, page: p });
+      if (pairs && pairs.length) {
+        let startPairIdx = pairs.findIndex((p) => p.subject === j.current_subject && Number(p.year) === Number(j.current_year));
+        if (startPairIdx < 0) startPairIdx = 0;
+        for (let pi = startPairIdx; pi < pairs.length; pi++) {
+          for (let p = (pi === startPairIdx ? startPage : 0); p < pages; p++) {
+            tasks.push({ subject: pairs[pi].subject, year: Number(pairs[pi].year), page: p });
+          }
+        }
+      } else {
+        for (let si = startSubjectIdx; si < subjects.length; si++) {
+          const subject = subjects[si];
+          for (let yi = (si === startSubjectIdx ? startYearIdx : 0); yi < years.length; yi++) {
+            const year = years[yi];
+            for (let p = (si === startSubjectIdx && yi === startYearIdx ? startPage : 0); p < pages; p++) {
+              tasks.push({ subject, year, page: p });
+            }
           }
         }
       }
+
 
       const totalTasks = tasks.length;
       let activeCount = 0;
