@@ -4,10 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle2, Loader2, Play, RefreshCw, Activity, ShieldCheck, Database } from 'lucide-react';
+import { CheckCircle2, Loader2, Play, RefreshCw, Activity, ShieldCheck, Database, Zap, SlidersHorizontal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { SuperAdminJambManager } from './SuperAdminJambManager';
 import { SuperAdminJambMonitor } from './SuperAdminJambMonitor';
+
+const ALL_SUBJECTS = ['mathematics','english','chemistry','physics','biology','economics','literature-in-english','accounting','government','commerce','geography','crk','irk','civic-education','history'];
+const CURRENT_YEAR = new Date().getFullYear();
+const ALL_YEARS = Array.from({ length: CURRENT_YEAR - 2009 + 1 }, (_, i) => 2009 + i);
+
 
 
 type Job = {
