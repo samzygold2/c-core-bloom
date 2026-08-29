@@ -304,7 +304,77 @@ export function SuperAdminJambSync() {
           <SuperAdminJambManager />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={advancedOpen} onOpenChange={setAdvancedOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Advanced Sync</DialogTitle>
+            <DialogDescription>Select the years and subjects you want to pull from the ALOC API.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Years (2009–{CURRENT_YEAR})</Label>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setSelYears(ALL_YEARS)}>Select all</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelYears([])}>Clear</Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {ALL_YEARS.map((y) => (
+                  <label key={y} className="flex items-center gap-2 rounded border p-2 text-sm cursor-pointer hover:bg-accent">
+                    <Checkbox checked={selYears.includes(y)} onCheckedChange={() => setSelYears((p) => toggle(p, y))} />
+                    {y}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Subjects</Label>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setSelSubjects(ALL_SUBJECTS)}>Select all</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelSubjects([])}>Clear</Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {ALL_SUBJECTS.map((s) => (
+                  <label key={s} className="flex items-center gap-2 rounded border p-2 text-sm cursor-pointer hover:bg-accent capitalize">
+                    <Checkbox checked={selSubjects.includes(s)} onCheckedChange={() => setSelSubjects((p) => toggle(p, s))} />
+                    {s.replace(/-/g, ' ')}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 max-w-xs">
+              <Label htmlFor="adv-pages" className="text-sm font-semibold">Pages per subject/year (40 questions each)</Label>
+              <Input
+                id="adv-pages"
+                type="number"
+                min={1}
+                max={15}
+                value={advPages}
+                onChange={(e) => setAdvPages(Math.min(15, Math.max(1, Number(e.target.value) || 1)))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Estimated fetch: {selYears.length * selSubjects.length * advPages * 40} questions
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdvancedOpen(false)}>Cancel</Button>
+            <Button onClick={startAdvancedSync} disabled={busy} className="bg-blue-600 hover:bg-blue-700">
+              <RefreshCw className="h-4 w-4 mr-2" /> Start Advanced Sync
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
