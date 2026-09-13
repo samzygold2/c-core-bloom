@@ -728,6 +728,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      jamb_active_questions: {
+        Args: { _limit?: number; _subjects: string[]; _year: number }
+        Returns: {
+          correct_answer: string
+          explanation: string
+          id: string
+          image_url: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          subject: string
+          year: number
+        }[]
+      }
+      jamb_available_subjects: {
+        Args: { _year: number }
+        Returns: {
+          cnt: number
+          subject: string
+        }[]
+      }
       jamb_question_counts: {
         Args: never
         Returns: {
