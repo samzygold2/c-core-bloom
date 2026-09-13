@@ -144,30 +144,29 @@ export default function JambPractice() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showCalc, setShowCalc] = useState(false);
 
-  // load active visibility once user available
+  // Load which subjects actually have approved questions for the chosen year.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !year) return;
+    let cancelled = false;
     (async () => {
-      interface VisRow {
-        question_id: string;
+      setSubjectsLoading(true);
+      const { data, error } = await supabase.rpc('jamb_available_subjects', { _year: year });
+      if (cancelled) return;
+      if (error) {
+        console.error('Failed to load available subjects', error);
+        setAvailable({});
+      } else {
+        const map: Record<string, number> = {};
+        (data as { subject: string; cnt: number }[] | null)?.forEach(r => {
+          map[r.subject] = Number(r.cnt);
+        });
+        setAvailable(map);
       }
-      let vis: VisRow[] = [];
-      let fromVis = 0;
-      const batchSize = 5000;
-      while (true) {
-        const { data, error } = await supabase
-          .from('question_visibility')
-          .select('question_id')
-          .eq('is_active', true)
-          .range(fromVis, fromVis + batchSize - 1);
-        if (error || !data || data.length === 0) break;
-        vis = [...vis, ...(data as VisRow[])];
-        if (data.length < batchSize) break;
-        fromVis += batchSize;
-      }
-      setActiveIds(new Set(vis.map((v: VisRow) => v.question_id)));
+      setSubjectsLoading(false);
     })();
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [user, year]);
+
 
   // Keyboard shortcut support for CBT standard
   useEffect(() => {

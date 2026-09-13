@@ -437,16 +437,7 @@ const SuperAdmin = () => {
   const fetchAllResults = async () => {
     const { data } = await supabase
       .from('user_tests')
-      .select(`
-        id,
-        score,
-        start_time,
-        end_time,
-        answers,
-        created_at,
-        tests(title, total_questions),
-        profiles(firstname, lastname, email)
-      `)
+      .select('id, user_id, score, start_time, end_time, answers, created_at, tests(title, total_questions)')
       .not('score', 'is', null)
       .order('created_at', { ascending: false });
 
@@ -454,30 +445,53 @@ const SuperAdmin = () => {
 
     interface RawTestResult {
       id: string;
+      user_id: string | null;
       score: number;
       start_time: string;
       end_time: string;
       answers: Record<string, unknown> | null;
       created_at: string;
       tests: { title: string; total_questions: number } | null;
-      profiles: { firstname: string; lastname: string; email: string } | null;
     }
 
-    const results: TestResult[] = (data as unknown as RawTestResult[]).map((item) => ({
-      id: item.id,
-      username: item.profiles ? `${item.profiles.firstname} ${item.profiles.lastname}` : 'Unknown User',
-      email: item.profiles?.email || '',
-      testTitle: item.tests?.title || 'Unknown Test',
-      score: item.score,
-      totalQuestions: item.tests?.total_questions || 0,
-      timestamp: new Date(item.created_at).toLocaleString(),
-      startTime: item.start_time,
-      endTime: item.end_time,
-      answers: item.answers,
-    }));
+    const rows = data as unknown as RawTestResult[];
+
+    // profiles has no FK to user_tests, so map user ids manually.
+    const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter(Boolean))) as string[];
+    const profileMap = new Map<string, { firstname: string; lastname: string; email: string }>();
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, firstname, lastname, email')
+        .in('id', userIds);
+      (profiles || []).forEach((p) => {
+        profileMap.set(p.id, {
+          firstname: p.firstname || '',
+          lastname: p.lastname || '',
+          email: p.email || '',
+        });
+      });
+    }
+
+    const results: TestResult[] = rows.map((item) => {
+      const profile = item.user_id ? profileMap.get(item.user_id) : undefined;
+      return {
+        id: item.id,
+        username: profile ? `${profile.firstname} ${profile.lastname}`.trim() || 'Unknown User' : 'Unknown User',
+        email: profile?.email || '',
+        testTitle: item.tests?.title || 'Unknown Test',
+        score: item.score,
+        totalQuestions: item.tests?.total_questions || 0,
+        timestamp: new Date(item.created_at).toLocaleString(),
+        startTime: item.start_time,
+        endTime: item.end_time,
+        answers: item.answers,
+      };
+    });
 
     setAllResults(results);
   };
+
 
   const handleAssignRole = async (userId: string, role: 'admin' | 'super_admin' | 'user') => {
     const { error } = await supabase.functions.invoke('assign-admin-role', {
