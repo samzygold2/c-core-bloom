@@ -137,7 +137,9 @@ export default function JambPractice() {
   const [mode, setMode] = useState<'single' | 'multi' | null>(null);
   const [timerMins, setTimerMins] = useState<number | null>(null);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [activeIds, setActiveIds] = useState<Set<string>>(new Set());
+  const [available, setAvailable] = useState<Record<string, number>>({});
+  const [subjectsLoading, setSubjectsLoading] = useState(false);
+
   const [questions, setQuestions] = useState<PQ[]>([]);
   const [loading, setLoading] = useState(false);
   const [idx, setIdx] = useState(0);
