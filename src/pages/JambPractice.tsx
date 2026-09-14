@@ -137,7 +137,9 @@ export default function JambPractice() {
   const [mode, setMode] = useState<'single' | 'multi' | null>(null);
   const [timerMins, setTimerMins] = useState<number | null>(null);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [activeIds, setActiveIds] = useState<Set<string>>(new Set());
+  const [available, setAvailable] = useState<Record<string, number>>({});
+  const [subjectsLoading, setSubjectsLoading] = useState(false);
+
   const [questions, setQuestions] = useState<PQ[]>([]);
   const [loading, setLoading] = useState(false);
   const [idx, setIdx] = useState(0);
@@ -211,15 +213,15 @@ export default function JambPractice() {
   const startSingle = async (subject: string) => {
     if (!year) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('past_questions').select('*')
-      .eq('subject', subject).eq('year', year).limit(5000);
-    const raw = (data || []) as PQ[];
-    const filtered = activeIds.size > 0 ? raw.filter(q => activeIds.has(q.id)) : raw;
+    const { data, error } = await supabase.rpc('jamb_active_questions', {
+      _year: year, _subjects: [subject], _limit: 40,
+    });
+    const fetched = (data || []) as PQ[];
     setLoading(false);
-    if (!filtered.length) { toast.error('No questions available for this selection.'); return; }
+    if (error) { toast.error('Could not load questions. Please try again.'); return; }
+    if (!fetched.length) { toast.error('No questions available for this selection.'); return; }
     setSelectedSubjects([subject]);
-    setQuestions(filtered.slice(0, 40));
+    setQuestions(fetched);
     setIdx(0); setAnswers({}); setShowCalc(false);
     setStep('test');
   };
@@ -227,19 +229,25 @@ export default function JambPractice() {
   const startMulti = async () => {
     if (!year || selectedSubjects.length < 2) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('past_questions').select('*')
-      .eq('year', year).in('subject', selectedSubjects).limit(5000);
-    const raw = (data || []) as PQ[];
-    const filtered = activeIds.size > 0 ? raw.filter(q => activeIds.has(q.id)) : raw;
+    const { data, error } = await supabase.rpc('jamb_active_questions', {
+      _year: year, _subjects: selectedSubjects, _limit: selectedSubjects.length * 40,
+    });
+    const fetched = (data || []) as PQ[];
     setLoading(false);
-    if (!filtered.length) { toast.error('No questions available for the chosen subjects.'); return; }
+    if (error) { toast.error('Could not load questions. Please try again.'); return; }
+    if (!fetched.length) { toast.error('No questions available for the chosen subjects.'); return; }
     // Group questions by subject to keep clean JAMB CBT subject sections
-    filtered.sort((a, b) => a.subject.localeCompare(b.subject));
-    setQuestions(filtered);
+    fetched.sort((a, b) => a.subject.localeCompare(b.subject));
+    setQuestions(fetched);
     setIdx(0); setAnswers({}); setShowCalc(false);
     setStep('test');
   };
+
+
+  const availableSubjects = useMemo(
+    () => SUBJECTS.filter(s => (available[s] || 0) > 0),
+    [available],
+  );
 
   const score = useMemo(
     () => questions.filter(q => (answers[q.id] || '').toLowerCase() === (q.correct_answer || '').toLowerCase()).length,
@@ -378,13 +386,18 @@ export default function JambPractice() {
         {/* STEP: SINGLE SUBJECTS */}
         {step === 'single-subjects' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {loading && <div className="col-span-full flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
-            {!loading && SUBJECTS.map(s => (
+            {(loading || subjectsLoading) && <div className="col-span-full flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
+            {!loading && !subjectsLoading && availableSubjects.length === 0 && (
+              <Card className="col-span-full"><CardContent className="py-10 text-center text-muted-foreground">
+                No subjects have been made available for {year} yet. Please pick another year.
+              </CardContent></Card>
+            )}
+            {!loading && !subjectsLoading && availableSubjects.map(s => (
               <Card key={s} className="transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="p-4 flex items-center justify-between gap-3">
                   <div>
                     <div className="font-semibold">{titleCase(s)}</div>
-                    <div className="text-xs text-muted-foreground">{year} • {timerMins} mins • 40 Questions</div>
+                    <div className="text-xs text-muted-foreground">{year} • {timerMins} mins • {Math.min(40, available[s])} Questions</div>
                   </div>
                   <Button size="sm" onClick={() => startSingle(s)}>
                     <Play className="h-4 w-4 mr-1" /> Start
@@ -394,6 +407,7 @@ export default function JambPractice() {
             ))}
           </div>
         )}
+
 
         {/* STEP: MULTI TIMER */}
         {step === 'multi-timer' && (
@@ -427,7 +441,11 @@ export default function JambPractice() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {SUBJECTS.map(s => {
+                {subjectsLoading && <div className="col-span-full flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>}
+                {!subjectsLoading && availableSubjects.length === 0 && (
+                  <p className="col-span-full text-sm text-muted-foreground">No subjects have been made available for {year} yet.</p>
+                )}
+                {!subjectsLoading && availableSubjects.map(s => {
                   const sel = selectedSubjects.includes(s);
                   const disabled = !sel && selectedSubjects.length >= 4;
                   return (
@@ -451,6 +469,7 @@ export default function JambPractice() {
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" /> Launch Full Examination</>}
               </Button>
+
             </CardContent>
           </Card>
         )}
