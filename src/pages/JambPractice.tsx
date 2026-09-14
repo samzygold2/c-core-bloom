@@ -213,15 +213,15 @@ export default function JambPractice() {
   const startSingle = async (subject: string) => {
     if (!year) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('past_questions').select('*')
-      .eq('subject', subject).eq('year', year).limit(5000);
-    const raw = (data || []) as PQ[];
-    const filtered = activeIds.size > 0 ? raw.filter(q => activeIds.has(q.id)) : raw;
+    const { data, error } = await supabase.rpc('jamb_active_questions', {
+      _year: year, _subjects: [subject], _limit: 40,
+    });
+    const fetched = (data || []) as PQ[];
     setLoading(false);
-    if (!filtered.length) { toast.error('No questions available for this selection.'); return; }
+    if (error) { toast.error('Could not load questions. Please try again.'); return; }
+    if (!fetched.length) { toast.error('No questions available for this selection.'); return; }
     setSelectedSubjects([subject]);
-    setQuestions(filtered.slice(0, 40));
+    setQuestions(fetched);
     setIdx(0); setAnswers({}); setShowCalc(false);
     setStep('test');
   };
@@ -229,19 +229,20 @@ export default function JambPractice() {
   const startMulti = async () => {
     if (!year || selectedSubjects.length < 2) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('past_questions').select('*')
-      .eq('year', year).in('subject', selectedSubjects).limit(5000);
-    const raw = (data || []) as PQ[];
-    const filtered = activeIds.size > 0 ? raw.filter(q => activeIds.has(q.id)) : raw;
+    const { data, error } = await supabase.rpc('jamb_active_questions', {
+      _year: year, _subjects: selectedSubjects, _limit: selectedSubjects.length * 40,
+    });
+    const fetched = (data || []) as PQ[];
     setLoading(false);
-    if (!filtered.length) { toast.error('No questions available for the chosen subjects.'); return; }
+    if (error) { toast.error('Could not load questions. Please try again.'); return; }
+    if (!fetched.length) { toast.error('No questions available for the chosen subjects.'); return; }
     // Group questions by subject to keep clean JAMB CBT subject sections
-    filtered.sort((a, b) => a.subject.localeCompare(b.subject));
-    setQuestions(filtered);
+    fetched.sort((a, b) => a.subject.localeCompare(b.subject));
+    setQuestions(fetched);
     setIdx(0); setAnswers({}); setShowCalc(false);
     setStep('test');
   };
+
 
   const score = useMemo(
     () => questions.filter(q => (answers[q.id] || '').toLowerCase() === (q.correct_answer || '').toLowerCase()).length,
