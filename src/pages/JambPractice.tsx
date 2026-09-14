@@ -457,9 +457,14 @@ export default function JambPractice() {
                   );
                 })}
               </div>
-
+              <Button
+                disabled={selectedSubjects.length < 2 || loading}
+                onClick={startMulti}
+                className="w-full"
+              >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" /> Launch Full Examination</>}
               </Button>
+
             </CardContent>
           </Card>
         )}
