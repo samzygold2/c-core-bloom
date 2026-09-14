@@ -244,6 +244,11 @@ export default function JambPractice() {
   };
 
 
+  const availableSubjects = useMemo(
+    () => SUBJECTS.filter(s => (available[s] || 0) > 0),
+    [available],
+  );
+
   const score = useMemo(
     () => questions.filter(q => (answers[q.id] || '').toLowerCase() === (q.correct_answer || '').toLowerCase()).length,
     [answers, questions],
