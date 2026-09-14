@@ -436,7 +436,11 @@ export default function JambPractice() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {SUBJECTS.map(s => {
+                {subjectsLoading && <div className="col-span-full flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>}
+                {!subjectsLoading && availableSubjects.length === 0 && (
+                  <p className="col-span-full text-sm text-muted-foreground">No subjects have been made available for {year} yet.</p>
+                )}
+                {!subjectsLoading && availableSubjects.map(s => {
                   const sel = selectedSubjects.includes(s);
                   const disabled = !sel && selectedSubjects.length >= 4;
                   return (
@@ -453,11 +457,7 @@ export default function JambPractice() {
                   );
                 })}
               </div>
-              <Button
-                disabled={selectedSubjects.length < 2 || loading}
-                onClick={startMulti}
-                className="w-full"
-              >
+
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" /> Launch Full Examination</>}
               </Button>
             </CardContent>
