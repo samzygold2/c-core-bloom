@@ -275,7 +275,12 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
       </div>
 
       <div className="space-y-2">
-        {YEARS.map(year => {
+        {years.length === 0 && (
+          <Card className="p-6 text-center text-sm text-slate-500">
+            No JAMB questions have been synced yet.
+          </Card>
+        )}
+        {years.map(year => {
           const s = stats[year] || { total: 0, active: 0, subjects: {} };
           const isOpen = openYear === year;
           const isYearActive = s.total > 0 && s.active === s.total;
@@ -331,8 +336,8 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    {SUBJECTS.map(sub => {
-                      const subStat = s.subjects[sub] || { total: 0, active: 0 };
+                    {Object.keys(s.subjects).sort().map(sub => {
+                      const subStat = s.subjects[sub];
                       const isChecked = selected[year]?.has(sub) || false;
                       const hasQuestions = subStat.total > 0;
 
