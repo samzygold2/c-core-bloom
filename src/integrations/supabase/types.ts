@@ -744,6 +744,15 @@ export type Database = {
           year: number
         }[]
       }
+      jamb_admin_question_stats: {
+        Args: { _admin_id: string }
+        Returns: {
+          active: number
+          subject: string
+          total: number
+          year: number
+        }[]
+      }
       jamb_available_subjects: {
         Args: { _year: number }
         Returns: {
