@@ -10,17 +10,30 @@ import { toast } from '@/hooks/use-toast';
 import { CheckCircle2, ChevronUp, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const SUBJECTS = [
-  'mathematics', 'english', 'chemistry', 'physics', 'biology',
-  'economics', 'literature-in-english', 'accounting', 'government',
-  'commerce', 'geography', 'crk', 'irk', 'civic-education', 'history',
-];
-const YEARS = Array.from({ length: 16 }, (_, i) => 2024 - i);
-
 interface YearStat {
   total: number;
   active: number;
   subjects: Record<string, { total: number; active: number }>;
+}
+
+const PAGE = 1000;
+
+// Fetch every question id for a year, page by page (the API caps rows per request).
+async function fetchYearQuestions(year: number) {
+  const rows: Array<{ id: string; subject: string }> = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('past_questions')
+      .select('id, subject')
+      .eq('year', year)
+      .range(from, from + PAGE - 1);
+    if (error || !data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return rows;
 }
 
 export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: string }) {
@@ -28,6 +41,7 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
   const adminId = overrideAdminId || user?.id;
 
   const [stats, setStats] = useState<Record<number, YearStat>>({});
+  const [years, setYears] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [openYear, setOpenYear] = useState<number | null>(null);
   const [selected, setSelected] = useState<Record<number, Set<string>>>({});
@@ -37,56 +51,36 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
   const loadStats = useCallback(async () => {
     if (!adminId) return;
     setLoading(true);
-    
-    // Fetch all past questions with pagination
-    let pq: Array<{ id: string; subject: string; year: number }> = [];
-    let fromPq = 0;
-    const batchSize = 5000;
-    while (true) {
-      const { data, error } = await supabase
-        .from('past_questions')
-        .select('id, subject, year')
-        .range(fromPq, fromPq + batchSize - 1);
-      if (error || !data || data.length === 0) break;
-      pq = [...pq, ...data];
-      if (data.length < batchSize) break;
-      fromPq += batchSize;
-    }
 
-    // Fetch all question visibility rows with pagination
-    let vis: Array<{ question_id: string; is_active: boolean }> = [];
-    let fromVis = 0;
-    while (true) {
-      const { data, error } = await supabase
-        .from('question_visibility')
-        .select('question_id, is_active')
-        .eq('admin_id', adminId)
-        .range(fromVis, fromVis + batchSize - 1);
-      if (error || !data || data.length === 0) break;
-      vis = [...vis, ...data];
-      if (data.length < batchSize) break;
-      fromVis += batchSize;
-    }
-
-    const activeSet = new Set((vis || []).filter((v) => v.is_active).map((v) => v.question_id));
-
-    const next: Record<number, YearStat> = {};
-    YEARS.forEach(y => { next[y] = { total: 0, active: 0, subjects: {} }; });
-    (pq || []).forEach((q) => {
-      if (!next[q.year]) return;
-      const s = next[q.year];
-      s.total++;
-      if (activeSet.has(q.id)) s.active++;
-      const sub = s.subjects[q.subject] || { total: 0, active: 0 };
-      sub.total++;
-      if (activeSet.has(q.id)) sub.active++;
-      s.subjects[q.subject] = sub;
+    const { data, error } = await supabase.rpc('jamb_admin_question_stats', {
+      _admin_id: adminId,
     });
+
+    if (error) {
+      toast({ title: 'Could not load question counts', description: error.message, variant: 'destructive' });
+      setLoading(false);
+      return;
+    }
+
+    const rows = (data || []) as Array<{ subject: string; year: number; total: number; active: number }>;
+    const next: Record<number, YearStat> = {};
+    rows.forEach((r) => {
+      const y = Number(r.year);
+      if (!next[y]) next[y] = { total: 0, active: 0, subjects: {} };
+      const total = Number(r.total);
+      const active = Number(r.active);
+      next[y].total += total;
+      next[y].active += active;
+      next[y].subjects[r.subject] = { total, active };
+    });
+
+    const yearList = Object.keys(next).map(Number).sort((a, b) => b - a);
     setStats(next);
+    setYears(yearList);
 
     // Preselect subjects that have any active questions
     const presel: Record<number, Set<string>> = {};
-    YEARS.forEach(y => {
+    yearList.forEach(y => {
       const set = new Set<string>();
       Object.entries(next[y].subjects).forEach(([sub, v]) => {
         if (v.total > 0 && v.active > 0) set.add(sub);
