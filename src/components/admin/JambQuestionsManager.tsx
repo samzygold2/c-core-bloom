@@ -118,15 +118,14 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
       }
     }
 
-    const { data: qs } = await supabase
-      .from('past_questions').select('id').eq('year', year);
-    const rows = (qs || []).map((q) => ({
+    const qs = await fetchYearQuestions(year);
+    const rows = qs.map((q) => ({
       question_id: q.id, admin_id: adminId, is_active: value,
       activated_at: value ? new Date().toISOString() : null, updated_by: user?.id,
     }));
     if (rows.length) {
-      for (let i = 0; i < rows.length; i += 5000) {
-        const chunk = rows.slice(i, i + 5000);
+      for (let i = 0; i < rows.length; i += 500) {
+        const chunk = rows.slice(i, i + 500);
         const { error } = await supabase
           .from('question_visibility').upsert(chunk, { onConflict: 'question_id,admin_id' });
         if (error) {
@@ -234,16 +233,15 @@ export function JambQuestionsManager({ overrideAdminId }: { overrideAdminId?: st
     if (!adminId) return;
     setBusyYear(year);
     const sel = selected[year] || new Set();
-    const { data: qs } = await supabase
-      .from('past_questions').select('id, subject').eq('year', year);
-    const rows = (qs || []).map((q) => ({
+    const qs = await fetchYearQuestions(year);
+    const rows = qs.map((q) => ({
       question_id: q.id, admin_id: adminId, is_active: sel.has(q.subject),
       activated_at: sel.has(q.subject) ? new Date().toISOString() : null,
       updated_by: user?.id,
     }));
     if (rows.length) {
-      for (let i = 0; i < rows.length; i += 5000) {
-        const chunk = rows.slice(i, i + 5000);
+      for (let i = 0; i < rows.length; i += 500) {
+        const chunk = rows.slice(i, i + 500);
         const { error } = await supabase
           .from('question_visibility').upsert(chunk, { onConflict: 'question_id,admin_id' });
         if (error) {
