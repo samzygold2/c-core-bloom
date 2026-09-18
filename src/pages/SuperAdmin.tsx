@@ -63,6 +63,7 @@ interface UserWithRoles {
   email: string;
   created_at: string;
   roles: string[];
+  is_active?: boolean;
 }
 
 interface TestResult {
