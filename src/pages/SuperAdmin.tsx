@@ -292,6 +292,8 @@ const SuperAdmin = () => {
       return;
     }
 
+    setCurrentUserId(session.user.id);
+
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
