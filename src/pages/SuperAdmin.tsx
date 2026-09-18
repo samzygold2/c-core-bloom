@@ -9,6 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -30,7 +40,10 @@ import {
   AlertTriangle,
   Download,
   GraduationCap,
-  Loader2
+  Loader2,
+  UserX,
+  UserCheck,
+  Trash2
 } from 'lucide-react';
 import { downloadBulkTestResultsPDF } from '@/lib/pdfGenerator';
 import SystemConfigPanel from '@/components/admin/SystemConfigPanel';
@@ -63,6 +76,7 @@ interface UserWithRoles {
   email: string;
   created_at: string;
   roles: string[];
+  is_active?: boolean;
 }
 
 interface TestResult {
@@ -111,6 +125,9 @@ const SuperAdmin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserWithRoles | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -287,6 +304,8 @@ const SuperAdmin = () => {
       navigate('/super-admin-login');
       return;
     }
+
+    setCurrentUserId(session.user.id);
 
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
@@ -546,6 +565,70 @@ const SuperAdmin = () => {
     fetchUsers();
     fetchAuditLogs();
   };
+
+  const handleToggleActive = async (target: UserWithRoles) => {
+    const newStatus = !(target.is_active ?? true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_active: newStatus })
+      .eq('id', target.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update account status.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUsers((prev) => prev.map((u) => (u.id === target.id ? { ...u, is_active: newStatus } : u)));
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('audit_log').insert({
+        admin_id: user.id,
+        action: `${newStatus ? 'Activated' : 'Deactivated'} account ${target.email}`,
+      });
+    }
+
+    toast({
+      title: newStatus ? 'Account activated' : 'Account deactivated',
+      description: `${target.firstname} ${target.lastname} is now ${newStatus ? 'active' : 'deactivated'}.`,
+    });
+    fetchAuditLogs();
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+
+    const { data, error } = await supabase.functions.invoke('delete-user', {
+      body: { userId: deleteTarget.id },
+    });
+
+    setDeleting(false);
+
+    const failure = error || (data as { error?: string } | null)?.error;
+    if (failure) {
+      toast({
+        title: 'Delete failed',
+        description: typeof failure === 'string' ? failure : 'Could not delete this account.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Account deleted',
+      description: `${deleteTarget.firstname} ${deleteTarget.lastname} has been permanently removed.`,
+    });
+    setDeleteTarget(null);
+    fetchUsers();
+    fetchStats();
+    fetchAuditLogs();
+  };
+
 
   const handlePasswordRecovery = async (userEmail: string, userName: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
@@ -958,6 +1041,35 @@ const SuperAdmin = () => {
                                   - Admin
                                 </Button>
                               )}
+                              {user.id !== currentUserId && !user.roles.includes('super_admin') && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleToggleActive(user)}
+                                    className={
+                                      (user.is_active ?? true)
+                                        ? 'border-orange-400 text-orange-600 hover:bg-orange-50 text-xs'
+                                        : 'border-emerald-400 text-emerald-600 hover:bg-emerald-50 text-xs'
+                                    }
+                                  >
+                                    {(user.is_active ?? true) ? (
+                                      <><UserX className="h-3 w-3 mr-1" />Deactivate</>
+                                    ) : (
+                                      <><UserCheck className="h-3 w-3 mr-1" />Activate</>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setDeleteTarget(user)}
+                                    className="border-red-500 text-red-600 hover:bg-red-50 text-xs"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1161,6 +1273,29 @@ const SuperAdmin = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this account permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `${deleteTarget.firstname} ${deleteTarget.lastname} (${deleteTarget.email}) will be removed along with their roles, admin links and test history. This cannot be undone.`
+                : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDeleteUser(); }}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? 'Deleting...' : 'Delete permanently'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
