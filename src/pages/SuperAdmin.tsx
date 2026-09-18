@@ -1028,6 +1028,35 @@ const SuperAdmin = () => {
                                   - Admin
                                 </Button>
                               )}
+                              {user.id !== currentUserId && !user.roles.includes('super_admin') && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleToggleActive(user)}
+                                    className={
+                                      (user.is_active ?? true)
+                                        ? 'border-orange-400 text-orange-600 hover:bg-orange-50 text-xs'
+                                        : 'border-emerald-400 text-emerald-600 hover:bg-emerald-50 text-xs'
+                                    }
+                                  >
+                                    {(user.is_active ?? true) ? (
+                                      <><UserX className="h-3 w-3 mr-1" />Deactivate</>
+                                    ) : (
+                                      <><UserCheck className="h-3 w-3 mr-1" />Activate</>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setDeleteTarget(user)}
+                                    className="border-red-500 text-red-600 hover:bg-red-50 text-xs"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
