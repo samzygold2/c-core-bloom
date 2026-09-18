@@ -112,6 +112,9 @@ const SuperAdmin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserWithRoles | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
