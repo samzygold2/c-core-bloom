@@ -553,6 +553,70 @@ const SuperAdmin = () => {
     fetchAuditLogs();
   };
 
+  const handleToggleActive = async (target: UserWithRoles) => {
+    const newStatus = !(target.is_active ?? true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_active: newStatus })
+      .eq('id', target.id);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update account status.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUsers((prev) => prev.map((u) => (u.id === target.id ? { ...u, is_active: newStatus } : u)));
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('audit_log').insert({
+        admin_id: user.id,
+        action: `${newStatus ? 'Activated' : 'Deactivated'} account ${target.email}`,
+      });
+    }
+
+    toast({
+      title: newStatus ? 'Account activated' : 'Account deactivated',
+      description: `${target.firstname} ${target.lastname} is now ${newStatus ? 'active' : 'deactivated'}.`,
+    });
+    fetchAuditLogs();
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+
+    const { data, error } = await supabase.functions.invoke('delete-user', {
+      body: { userId: deleteTarget.id },
+    });
+
+    setDeleting(false);
+
+    const failure = error || (data as { error?: string } | null)?.error;
+    if (failure) {
+      toast({
+        title: 'Delete failed',
+        description: typeof failure === 'string' ? failure : 'Could not delete this account.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Account deleted',
+      description: `${deleteTarget.firstname} ${deleteTarget.lastname} has been permanently removed.`,
+    });
+    setDeleteTarget(null);
+    fetchUsers();
+    fetchStats();
+    fetchAuditLogs();
+  };
+
+
   const handlePasswordRecovery = async (userEmail: string, userName: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
