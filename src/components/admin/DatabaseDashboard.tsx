@@ -40,6 +40,11 @@ import {
 
 type Row = Record<string, any>;
 
+interface UserIdentity {
+  username: string | null;
+  email: string;
+}
+
 interface TableConfig {
   name: string;
   label: string;
@@ -146,6 +151,27 @@ const TABLES: TableConfig[] = [
 
 const PAGE_SIZE = 25;
 
+const USER_REFERENCE_COLUMNS = new Set([
+  'user_id',
+  'admin_id',
+  'created_by',
+  'reviewed_by',
+  'updated_by',
+  'processed_by',
+  'generated_by',
+  'run_by',
+  'started_by',
+]);
+
+const isUserReferenceColumn = (column: string) => USER_REFERENCE_COLUMNS.has(column);
+
+const formatColumnLabel = (column: string) => {
+  if (column === 'user_id') return 'Username / Email';
+  if (column === 'admin_id') return 'Admin Username / Email';
+  if (isUserReferenceColumn(column)) return column.replace(/_by$/, '').replace(/_/g, ' ');
+  return column.replace(/_/g, ' ');
+};
+
 const formatCell = (value: any) => {
   if (value === null || value === undefined) return '—';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
@@ -165,6 +191,8 @@ export function DatabaseDashboard() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [userIdentities, setUserIdentities] = useState<Record<string, UserIdentity>>({});
+  const [identityView, setIdentityView] = useState<Record<string, 'username' | 'email'>>({});
 
   const [editRow, setEditRow] = useState<Row | null>(null);
   const [editValues, setEditValues] = useState<Row>({});
@@ -198,8 +226,39 @@ export function DatabaseDashboard() {
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
       if (error) throw error;
-      setRows((data as Row[]) || []);
+      const nextRows = (data as Row[]) || [];
+      setRows(nextRows);
       setCount(total || 0);
+
+      const userReferenceColumns = config.columns.filter(isUserReferenceColumn);
+      const userIds = Array.from(
+        new Set(
+          nextRows.flatMap((row) =>
+            userReferenceColumns
+              .map((column) => row[column])
+              .filter((value): value is string => typeof value === 'string' && value.length > 0),
+          ),
+        ),
+      );
+
+      if (userIds.length === 0) {
+        setUserIdentities({});
+      } else {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, email')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        const identities = Object.fromEntries(
+          (profiles || []).map((profile) => [
+            profile.id,
+            { username: profile.username, email: profile.email },
+          ]),
+        );
+        setUserIdentities(identities);
+      }
     } catch (error: any) {
       setRows([]);
       setCount(0);
@@ -222,6 +281,40 @@ export function DatabaseDashboard() {
     setPage(0);
     setSearch('');
     setFilters({});
+    setIdentityView({});
+  };
+
+  const renderCell = (row: Row, column: string) => {
+    const value = row[column];
+    if (!isUserReferenceColumn(column) || typeof value !== 'string') return formatCell(value);
+
+    const identity = userIdentities[value];
+    if (!identity) return 'Unknown user';
+
+    const cellKey = `${row.id}:${column}`;
+    const preferredView = identityView[cellKey] || (identity.username ? 'username' : 'email');
+    const username = identity.username?.trim();
+    const label = preferredView === 'username' && username ? username : identity.email;
+    const canToggle = Boolean(username && identity.email && username !== identity.email);
+
+    if (!canToggle) return label;
+
+    return (
+      <Button
+        type="button"
+        variant="link"
+        className="h-auto max-w-full justify-start p-0 text-left font-normal"
+        title={`Click to show ${preferredView === 'username' ? 'email' : 'username'}`}
+        onClick={() =>
+          setIdentityView((current) => ({
+            ...current,
+            [cellKey]: preferredView === 'username' ? 'email' : 'username',
+          }))
+        }
+      >
+        <span className="max-w-[240px] truncate">{label}</span>
+      </Button>
+    );
   };
 
   const openEdit = (row: Row) => {
@@ -357,7 +450,7 @@ export function DatabaseDashboard() {
                 <TableRow>
                   {config.columns.map((c) => (
                     <TableHead key={c} className="whitespace-nowrap capitalize">
-                      {c.replace(/_/g, ' ')}
+                      {formatColumnLabel(c)}
                     </TableHead>
                   ))}
                   <TableHead className="text-right">Actions</TableHead>
@@ -384,7 +477,7 @@ export function DatabaseDashboard() {
                     <TableRow key={row.id}>
                       {config.columns.map((c) => (
                         <TableCell key={c} className="max-w-[280px] align-top text-sm">
-                          {formatCell(row[c])}
+                          {renderCell(row, c)}
                         </TableCell>
                       ))}
                       <TableCell className="text-right whitespace-nowrap">
