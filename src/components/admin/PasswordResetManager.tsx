@@ -45,6 +45,10 @@ const PasswordResetManager = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Current admin
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not signed in');
+
       // Fetch pending password reset requests (only for users, not admins)
       const { data: requestsData, error: requestsError } = await supabase
         .from('password_reset_requests')
@@ -54,26 +58,42 @@ const PasswordResetManager = () => {
         .order('created_at', { ascending: false });
 
       if (requestsError) throw requestsError;
-      setRequests(requestsData || []);
 
-      // Fetch all user profiles
-      const { data: usersData, error: usersError } = await supabase
-        .from('profiles')
-        .select('id, username, firstname, lastname, email');
-
-      if (usersError) throw usersError;
-
-      // Fetch admin user IDs to filter them out
-      const { data: adminRoles } = await supabase
-        .from('user_roles')
+      // Users assigned to this admin via user_admins (approved)
+      const { data: assignments } = await supabase
+        .from('user_admins')
         .select('user_id')
-        .in('role', ['admin', 'super_admin']);
+        .eq('admin_id', currentUser.id);
 
-      const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
-      
-      // Filter out admins from user list
-      const nonAdminUsers = (usersData || []).filter(user => !adminUserIds.has(user.id));
-      setUsers(nonAdminUsers);
+      // Users with this admin as their primary assigned admin
+      const { data: primaryProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('assigned_admin_id', currentUser.id);
+
+      const assignedIds = new Set<string>([
+        ...(assignments || []).map(a => a.user_id),
+        ...(primaryProfiles || []).map(p => p.id),
+      ]);
+
+      // Fetch only assigned users' profiles
+      let assignedUsers: UserProfile[] = [];
+      if (assignedIds.size > 0) {
+        const { data: usersData, error: usersError } = await supabase
+          .from('profiles')
+          .select('id, username, firstname, lastname, email')
+          .in('id', Array.from(assignedIds));
+
+        if (usersError) throw usersError;
+        assignedUsers = usersData || [];
+      }
+      setUsers(assignedUsers);
+
+      // Keep only requests from this admin's assigned users
+      const assignedUsernames = new Set(
+        assignedUsers.map(u => u.username || u.email.replace('@cbt.local', ''))
+      );
+      setRequests((requestsData || []).filter(r => assignedUsernames.has(r.username)));
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
