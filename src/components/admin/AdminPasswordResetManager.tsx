@@ -129,7 +129,7 @@ const AdminPasswordResetManager = () => {
           status: 'processed', 
           processed_at: new Date().toISOString() 
         })
-        .eq('username', admin.username || admin.email.replace('@cbt.local', ''))
+        .in('username', [admin.username, admin.email, admin.email.replace('@cbt.local', '')].filter(Boolean) as string[])
         .eq('status', 'pending');
 
       fetchData(); // Refresh the list
@@ -162,9 +162,11 @@ const AdminPasswordResetManager = () => {
   };
 
   const getAdminForRequest = (request: ResetRequest): AdminProfile | undefined => {
-    return admins.find(a => 
-      a.username === request.username || 
-      a.email === `${request.username}@cbt.local`
+    const r = request.username.trim().toLowerCase();
+    return admins.find(a =>
+      a.username?.toLowerCase() === r ||
+      a.email.toLowerCase() === r ||
+      a.email.toLowerCase() === `${r}@cbt.local`
     );
   };
 
