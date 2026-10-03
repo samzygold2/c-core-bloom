@@ -132,7 +132,7 @@ serve(async (req) => {
         }
 
         // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = (100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000)).toString();
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
         // Invalidate any existing unused OTPs for this user
@@ -190,10 +190,19 @@ serve(async (req) => {
           );
         }
 
-        // Find user by username (email format used in this app)
-        const email = `${username.toLowerCase()}@cbt.local`;
-        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
-        
+        // Find user by username, internal email, or real email (admins use real emails)
+        const ident = String(username).trim().toLowerCase();
+        const candidates = ident.includes('@') ? [ident] : [`${ident}@cbt.local`];
+        let { data: prof, error: userError } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .in('email', candidates)
+          .maybeSingle();
+        if (!prof && !userError && !ident.includes('@')) {
+          const r = await supabaseAdmin.from('profiles').select('id').ilike('username', ident).maybeSingle();
+          prof = r.data; userError = r.error;
+        }
+
         if (userError) {
           console.error('[reset-password] User lookup error:', userError);
           return new Response(
@@ -202,11 +211,11 @@ serve(async (req) => {
           );
         }
 
-        const targetUser = userData.users.find(u => u.email === email);
+        const targetUser = prof ? { id: prof.id } : null;
         if (!targetUser) {
           return new Response(
-            JSON.stringify({ error: 'User not found' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({ error: 'Invalid username or code' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 

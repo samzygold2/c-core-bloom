@@ -12,12 +12,12 @@ import { AlertCircle, CheckCircle, KeyRound, Send, Lock } from 'lucide-react';
 import { z } from 'zod';
 
 const requestSchema = z.object({
-  username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
+  username: z.string().trim().min(1, 'Username or email is required').max(255, 'Too long'),
   role: z.enum(['user', 'admin'], { required_error: 'Please select your role' }),
 });
 
 const resetSchema = z.object({
-  username: z.string().min(1, 'Username is required').max(50, 'Username too long'),
+  username: z.string().trim().min(1, 'Username or email is required').max(255, 'Too long'),
   otp: z.string().length(6, 'OTP must be 6 digits').regex(/^\d+$/, 'OTP must contain only numbers'),
   password: z.string().min(6, 'Password must be at least 6 characters').max(100, 'Password too long'),
   confirmPassword: z.string(),
@@ -167,7 +167,7 @@ const ForgotPassword = () => {
                   <Input
                     id="request-username"
                     type="text"
-                    placeholder="Enter your username"
+                    placeholder="Username (or email for admins)"
                     value={requestUsername}
                     onChange={(e) => setRequestUsername(e.target.value)}
                     disabled={requestLoading}
@@ -225,7 +225,7 @@ const ForgotPassword = () => {
                     <Input
                       id="reset-username"
                       type="text"
-                      placeholder="Enter your username"
+                      placeholder="Username (or email for admins)"
                       value={resetUsername}
                       onChange={(e) => setResetUsername(e.target.value)}
                       disabled={resetLoading}
