@@ -245,10 +245,10 @@ const PasswordResetManager = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <KeyRound className="h-5 w-5" />
-            Generate OTP for Any User
+            Generate OTP for Your Students
           </CardTitle>
           <CardDescription>
-            Manually generate an OTP for password reset
+            Manually generate an OTP for a student assigned to you
           </CardDescription>
         </CardHeader>
         <CardContent>
