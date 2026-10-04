@@ -25,7 +25,15 @@ interface Question {
   is_reviewed: boolean;
   reviewed_by: string | null;
   reviewed_at: string | null;
-  tests: { title: string };
+  tests: { title: string } | null;
+}
+
+interface ImportedQuestion {
+  question_text?: string;
+  options?: string[];
+  correct_answer?: number;
+  difficulty?: string;
+  [key: string]: unknown;
 }
 
 export const QuestionManager = () => {
@@ -80,7 +88,7 @@ export const QuestionManager = () => {
       .order('is_reviewed', { ascending: true })
       .order('created_at', { ascending: false });
     
-    if (data) setQuestions(data as any);
+    if (data) setQuestions(data as Question[]);
   };
 
   const handleCreate = async () => {
@@ -231,7 +239,7 @@ export const QuestionManager = () => {
 
     try {
       const text = await file.text();
-      let questions: any[] = [];
+      let questions: ImportedQuestion[] = [];
 
       if (file.name.endsWith('.json')) {
         questions = JSON.parse(text);
@@ -350,17 +358,17 @@ export const QuestionManager = () => {
     return values;
   };
 
-  const parseCSV = (text: string): any[] => {
+  const parseCSV = (text: string): ImportedQuestion[] => {
     const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return [];
 
     const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-    const questions: any[] = [];
+    const questions: ImportedQuestion[] = [];
 
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
       const values = parseCSVLine(lines[i]);
-      const question: any = {};
+      const question: ImportedQuestion = {};
 
       headers.forEach((header, index) => {
         const value = values[index] || '';

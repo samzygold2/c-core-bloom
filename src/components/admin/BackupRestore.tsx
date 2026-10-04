@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,7 +55,10 @@ const BackupRestore = () => {
   const fetchAll = async (table: string) => {
     const rows: Record<string, unknown>[] = [];
     for (let from = 0; ; from += PAGE) {
-      const { data, error } = await (supabase as any).from(table).select('*').range(from, from + PAGE - 1);
+      const { data, error } = await supabase
+        .from(table as keyof Database['public']['Tables'])
+        .select('*')
+        .range(from, from + PAGE - 1);
       if (error) throw new Error(`${table}: ${error.message}`);
       rows.push(...(data || []));
       if (!data || data.length < PAGE) break;
@@ -83,8 +87,9 @@ const BackupRestore = () => {
       URL.revokeObjectURL(url);
       const total = Object.values(backup.tables).reduce((n, r) => n + r.length, 0);
       toast({ title: 'Backup ready', description: `${total.toLocaleString()} records downloaded.` });
-    } catch (e: any) {
-      toast({ title: 'Backup failed', description: e.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Backup failed', description: message, variant: 'destructive' });
     } finally {
       setBusy(false);
       setStatus('');
@@ -110,16 +115,16 @@ const BackupRestore = () => {
         for (let i = 0; i < rows.length; i += CHUNK) {
           const chunk = rows.slice(i, i + CHUNK);
           setStatus(`Restoring ${table} (${i + chunk.length}/${rows.length})…`);
-          const { error } = await (supabase as any)
-            .from(table)
-            .upsert(chunk, { onConflict: 'id', ignoreDuplicates: mode === 'skip' });
+          const { error } = await supabase
+            .from(table as keyof Database['public']['Tables'])
+            .upsert(chunk as never, { onConflict: 'id', ignoreDuplicates: mode === 'skip' });
           if (!error) ok += chunk.length;
           else {
             // Fall back to row-by-row so one bad record doesn't block the rest
             for (const row of chunk) {
-              const { error: e2 } = await (supabase as any)
-                .from(table)
-                .upsert(row, { onConflict: 'id', ignoreDuplicates: mode === 'skip' });
+              const { error: e2 } = await supabase
+                .from(table as keyof Database['public']['Tables'])
+                .upsert(row as never, { onConflict: 'id', ignoreDuplicates: mode === 'skip' });
               if (e2) { failed++; lastError = e2.message; } else ok++;
             }
           }
@@ -135,8 +140,9 @@ const BackupRestore = () => {
         description: `${results.reduce((n, r) => n + r.ok, 0).toLocaleString()} records restored${failedTotal ? `, ${failedTotal} failed` : ''}.`,
         variant: failedTotal ? 'destructive' : undefined,
       });
-    } catch (e: any) {
-      toast({ title: 'Restore failed', description: e.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Restore failed', description: message, variant: 'destructive' });
     } finally {
       setBusy(false);
       setStatus('');
@@ -182,7 +188,11 @@ const BackupRestore = () => {
           </Button>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <RadioGroup value={mode} onValueChange={(v) => setMode(v as any)} className="flex gap-4">
+            <RadioGroup
+              value={mode}
+              onValueChange={(value) => setMode(value === 'skip' ? 'skip' : 'overwrite')}
+              className="flex gap-4"
+            >
               <div className="flex items-center gap-1.5"><RadioGroupItem value="overwrite" id="m-over" /><Label htmlFor="m-over" className="text-xs">Overwrite existing</Label></div>
               <div className="flex items-center gap-1.5"><RadioGroupItem value="skip" id="m-skip" /><Label htmlFor="m-skip" className="text-xs">Only add missing</Label></div>
             </RadioGroup>

@@ -35,7 +35,7 @@ interface RecentActivity {
   timestamp: string;
   startTime: string;
   endTime: string;
-  answers: any;
+  answers: unknown;
 }
 
 export const AnalyticsDashboard = () => {
@@ -162,13 +162,16 @@ export const AnalyticsDashboard = () => {
     if (!attempts) return;
 
     const testMap = new Map<string, { scores: number[]; title: string }>();
-    attempts.forEach((attempt: any) => {
+    attempts.forEach((attempt: { test_id: string; score: number | null; tests?: { title?: string | null } }) => {
       const testId = attempt.test_id;
       const title = attempt.tests?.title || 'Unknown Test';
       if (!testMap.has(testId)) {
         testMap.set(testId, { scores: [], title });
       }
-      testMap.get(testId)?.scores.push(attempt.score);
+      const current = testMap.get(testId);
+      if (current && attempt.score !== null && attempt.score !== undefined) {
+        current.scores.push(attempt.score);
+      }
     });
 
     const performance: TestPerformance[] = Array.from(testMap.entries()).map(([_, data]) => {
@@ -203,7 +206,7 @@ export const AnalyticsDashboard = () => {
     if (!data) return [];
 
     // Fetch profile info for these users
-    const relevantUserIds = [...new Set(data.map((d: any) => d.user_id))];
+    const relevantUserIds = [...new Set(data.map((d: { user_id: string }) => d.user_id))];
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, firstname, lastname, email')
@@ -211,7 +214,17 @@ export const AnalyticsDashboard = () => {
 
     const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-    return data.map((item: any) => {
+    return data.map((item: {
+      id: string;
+      user_id: string;
+      tests?: { title?: string | null; total_questions?: number | null };
+      score: number;
+      total_questions?: number | null;
+      created_at: string;
+      start_time: string | null;
+      end_time: string | null;
+      answers: unknown;
+    }) => {
       const profile = profileMap.get(item.user_id);
       return {
         id: item.id,

@@ -42,7 +42,13 @@ export function AppSidebar() {
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
-        if (data) setProfile(data as any);
+        if (data) {
+          setProfile({
+            firstname: data.firstname ?? '',
+            lastname: data.lastname ?? '',
+            avatar_url: data.avatar_url ?? null,
+          });
+        }
       });
   }, [user]);
 

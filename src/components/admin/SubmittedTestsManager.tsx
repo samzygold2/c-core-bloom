@@ -36,6 +36,19 @@ interface SubmittedRow {
   total_questions: number;
 }
 
+interface SubmissionProfile {
+  firstname?: string | null;
+  lastname?: string | null;
+  email?: string | null;
+  description?: string | null;
+  avatar_url?: string | null;
+}
+
+interface SubmissionTest {
+  title?: string | null;
+  total_questions?: number | null;
+}
+
 type SubmissionStatus = 'all' | 'submitted' | 'in_progress';
 
 export function SubmittedTestsManager() {
@@ -101,13 +114,13 @@ export function SubmittedTestsManager() {
       .select('id, firstname, lastname, email, description, avatar_url')
       .in('id', submittedUserIds);
 
-    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
-    const testMap = new Map((myTests || []).map((t) => [t.id, t]));
+    const profileMap = new Map<string, SubmissionProfile>((profiles || []).map((p) => [p.id, p]));
+    const testMap = new Map<string, SubmissionTest>((myTests || []).map((t) => [t.id, t]));
 
     setRows(
       submissions.map((s) => {
-        const p: any = profileMap.get(s.user_id) || {};
-        const t: any = testMap.get(s.test_id) || {};
+        const p = profileMap.get(s.user_id) || {};
+        const t = testMap.get(s.test_id) || {};
         return {
           id: s.id,
           user_id: s.user_id,

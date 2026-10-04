@@ -106,7 +106,7 @@ const SystemConfigPanel = () => {
       return;
     }
 
-    data?.forEach((config: { key: string; value: any }) => {
+    data?.forEach((config: { key: string; value: unknown }) => {
       switch (config.key) {
         case 'test_defaults':
           setTestDefaults(config.value as TestDefaults);
@@ -125,7 +125,7 @@ const SystemConfigPanel = () => {
     setLoading(false);
   };
 
-  const saveConfig = async (key: string, value: any) => {
+  const saveConfig = async (key: string, value: unknown) => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     

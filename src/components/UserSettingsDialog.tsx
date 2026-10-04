@@ -103,8 +103,8 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
       setFirstname(data.firstname || '');
       setLastname(data.lastname || '');
       setPrimaryAdminId(data.assigned_admin_id || '');
-      setAvatarUrl((data as any).avatar_url || '');
-      setDescription((data as any).description || '');
+      setAvatarUrl(data.avatar_url || '');
+      setDescription(data.description || '');
     }
   };
 
@@ -179,15 +179,16 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
 
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl } as any)
+        .update({ avatar_url: publicUrl })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
 
       setAvatarUrl(publicUrl);
       toast({ title: 'Profile picture updated', description: 'Your new photo is saved.' });
-    } catch (err: any) {
-      toast({ title: 'Upload failed', description: err.message || 'Try again.', variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Try again.';
+      toast({ title: 'Upload failed', description: message, variant: 'destructive' });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -203,7 +204,7 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
         firstname: firstname.trim(),
         lastname: lastname.trim(),
         description: description.trim(),
-      } as any)
+      })
       .eq('id', user.id);
     setLoading(false);
     if (error) {

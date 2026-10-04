@@ -37,10 +37,12 @@ interface AdminTest {
   created_at: string | null;
 }
 
+type QuestionOptions = string[] | string | null;
+
 interface AdminQuestion {
   id: string;
   question_text: string;
-  options: any;
+  options: QuestionOptions;
   correct_answer: number;
   difficulty: string | null;
   is_reviewed: boolean | null;
@@ -174,19 +176,19 @@ const AdminActivityMonitor = () => {
 
     const testList = (testsData || []) as AdminTest[];
     const titleById = new Map(testList.map((t) => [t.id, t.title]));
-    const enrichedQuestions = (questionsData || []).map((q: any) => ({
+    const enrichedQuestions = (questionsData || []).map((q) => ({
       ...q,
       test_title: titleById.get(q.test_id) || 'Unknown',
     })) as AdminQuestion[];
 
-    const primaryList: AssignedUser[] = (primaryUsers || []).map((u: any) => ({
+    const primaryList: AssignedUser[] = (primaryUsers || []).map((u) => ({
       ...u,
       is_active: u.is_active ?? true,
       link_type: 'primary' as const,
     }));
     const primaryIds = new Set(primaryList.map((u) => u.id));
     const linkedIds = (linkedRows || [])
-      .map((r: any) => r.user_id)
+      .map((r) => r.user_id)
       .filter((id: string) => !primaryIds.has(id));
 
     let linkedList: AssignedUser[] = [];
@@ -195,7 +197,7 @@ const AdminActivityMonitor = () => {
         .from('profiles')
         .select('id, firstname, lastname, email, username, is_active')
         .in('id', linkedIds);
-      linkedList = (linkedProfiles || []).map((u: any) => ({
+      linkedList = (linkedProfiles || []).map((u) => ({
         ...u,
         is_active: u.is_active ?? true,
         link_type: 'linked' as const,
@@ -244,7 +246,7 @@ const AdminActivityMonitor = () => {
 
   const selectedAdmin = admins.find((a) => a.id === selectedAdminId);
 
-  const parseOptions = (options: any): string[] => {
+  const parseOptions = (options: QuestionOptions): string[] => {
     if (Array.isArray(options)) return options.map(String);
     if (typeof options === 'string') {
       try {

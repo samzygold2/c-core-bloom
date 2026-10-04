@@ -18,6 +18,8 @@ interface UserProfile {
   created_at: string;
 }
 
+type UserRoleName = 'admin' | 'moderator' | 'user';
+
 interface UserRole {
   role: string;
 }
@@ -33,7 +35,7 @@ export const UserManager = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [newRole, setNewRole] = useState<'admin' | 'moderator' | 'user'>('user');
+  const [newRole, setNewRole] = useState<UserRoleName>('user');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -128,7 +130,7 @@ export const UserManager = () => {
       .from('user_roles')
       .insert({
         user_id: selectedUser.id,
-        role: newRole as any
+        role: newRole,
       });
 
     if (error) {
@@ -171,7 +173,7 @@ export const UserManager = () => {
       .from('user_roles')
       .delete()
       .eq('user_id', user.id)
-      .eq('role', role as any);
+      .eq('role', role);
 
     if (error) {
       toast({
@@ -335,7 +337,7 @@ export const UserManager = () => {
               <div className="space-y-4 mt-4">
                 <div>
                   <Label>Select Role</Label>
-                  <Select value={newRole} onValueChange={(value: any) => setNewRole(value)}>
+                  <Select value={newRole} onValueChange={(value) => setNewRole(value as UserRoleName)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

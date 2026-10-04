@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import BackupRestore from './BackupRestore';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +40,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-type Row = Record<string, any>;
+type Row = Record<string, unknown>;
 
 interface UserIdentity {
   username: string | null;
@@ -173,7 +174,7 @@ const formatColumnLabel = (column: string) => {
   return column.replace(/_/g, ' ');
 };
 
-const formatCell = (value: any) => {
+const formatCell = (value: unknown) => {
   if (value === null || value === undefined) return '—';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'object') return JSON.stringify(value);
@@ -203,7 +204,7 @@ export function DatabaseDashboard() {
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      let query = (supabase.from(config.name as any) as any).select('*', { count: 'exact' });
+      let query = supabase.from(config.name as keyof Database['public']['Tables']).select('*', { count: 'exact' });
 
       if (search.trim() && config.searchColumns.length > 0) {
         const term = search.trim().replace(/[%,]/g, '');
@@ -260,12 +261,13 @@ export function DatabaseDashboard() {
         );
         setUserIdentities(identities);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setRows([]);
       setCount(0);
+      const message = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: 'Could not load table',
-        description: error.message || 'Unknown error',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -340,16 +342,18 @@ export function DatabaseDashboard() {
         payload[key] = value;
       }
 
-      const { error } = await (supabase.from(config.name as any) as any)
-        .update(payload)
-        .eq('id', editRow.id);
+      const { error } = await supabase
+        .from(config.name as keyof Database['public']['Tables'])
+        .update(payload as never)
+        .eq('id', String(editRow.id));
       if (error) throw error;
 
       toast({ title: 'Record updated', description: `${config.label} record saved.` });
       setEditRow(null);
       fetchRows();
-    } catch (error: any) {
-      toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Update failed', description: message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -358,15 +362,17 @@ export function DatabaseDashboard() {
   const confirmDelete = async () => {
     if (!deleteRow) return;
     try {
-      const { error } = await (supabase.from(config.name as any) as any)
+      const { error } = await supabase
+        .from(config.name as keyof Database['public']['Tables'])
         .delete()
-        .eq('id', deleteRow.id);
+        .eq('id', String(deleteRow.id));
       if (error) throw error;
       toast({ title: 'Record deleted', description: `1 row removed from ${config.label}.` });
       setDeleteRow(null);
       fetchRows();
-    } catch (error: any) {
-      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Delete failed', description: message, variant: 'destructive' });
     }
   };
 
