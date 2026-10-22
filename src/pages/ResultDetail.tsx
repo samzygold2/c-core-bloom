@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Target, Download, Cloud, RefreshCw } from 'lucide-react';
+import { Award, Target, FileDown, HardDriveUpload, Loader2, SearchX } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { downloadTestResultPDF, getPDFBlob } from '@/lib/pdfGenerator';
 import { getAccessToken, googleSignIn } from '@/lib/googleAuth';
@@ -77,12 +77,14 @@ const ResultDetail = () => {
 
   if (!result) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card>
-          <CardContent className="p-6">
-            <p>Result not found</p>
-            <Button onClick={() => navigate('/results')} className="mt-4">
-              Back to Results
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-sm">
+          <CardContent className="flex flex-col items-center p-6 text-center">
+            <SearchX className="mb-3 h-10 w-10 text-muted-foreground" />
+            <p className="font-semibold">We couldn't find that result</p>
+            <p className="mt-1 text-sm text-muted-foreground">It may belong to another account, or the link is wrong.</p>
+            <Button onClick={() => navigate('/results')} className="mt-4 h-11 w-full sm:h-10">
+              Back to my results
             </Button>
           </CardContent>
         </Card>
@@ -90,7 +92,7 @@ const ResultDetail = () => {
     );
   }
 
-  const testTitle = result.tests?.title ?? 'Unknown Test';
+  const testTitle = result.tests?.title ?? 'Untitled test';
   const total = result.tests?.total_questions || 1;
   const percentage = ((result.score / total) * 100).toFixed(1);
   const passed = parseFloat(percentage) >= 60;
@@ -115,13 +117,13 @@ const ResultDetail = () => {
         answers: result.answers || {},
       });
       toast({
-        title: 'PDF Downloaded',
-        description: 'Your result sheet was successfully generated and downloaded.',
+        title: 'PDF downloaded',
+        description: 'Your result sheet is in your downloads folder.',
       });
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Download Failed',
+        title: 'Could not create the PDF',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -177,12 +179,12 @@ const ResultDetail = () => {
 
       toast({
         title: 'Saved to Google Drive',
-        description: `"${filename}" was successfully uploaded to your Google Drive folder!`,
+        description: `"${filename}" is now in your Drive.`,
       });
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Upload Failed',
+        title: 'Could not save to Drive',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -192,14 +194,14 @@ const ResultDetail = () => {
   };
 
   return (
-    <DashboardLayout title="Test Results" subtitle={testTitle}>
+    <DashboardLayout title="Result" subtitle={testTitle}>
       <div className="max-w-2xl mx-auto">
         <Card className="text-center shadow-md">
           <CardHeader className="p-4 sm:p-6">
             <div className="mx-auto mb-3 sm:mb-4">
               {passed ? (
                 <div className="rounded-full bg-primary/10 p-4 sm:p-6 w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto">
-                  <Trophy className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
+                  <Award className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
                 </div>
               ) : (
                 <div className="rounded-full bg-secondary/10 p-4 sm:p-6 w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto">
@@ -207,57 +209,57 @@ const ResultDetail = () => {
                 </div>
               )}
             </div>
-            <CardTitle className="text-xl sm:text-3xl mb-2">{testTitle}</CardTitle>
-            <Badge variant={passed ? 'default' : 'secondary'}>
-              {passed ? 'Passed' : 'Keep Practicing'}
+            <CardTitle className="text-xl sm:text-3xl mb-2 break-words">{testTitle}</CardTitle>
+            <Badge variant={passed ? 'default' : 'secondary'} className="mx-auto w-fit">
+              {passed ? 'Passed' : 'Below the 60% pass mark'}
             </Badge>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
             <div>
               <div className="text-4xl sm:text-6xl font-bold mb-1 sm:mb-2">{percentage}%</div>
-              <p className="text-sm sm:text-base text-muted-foreground">Your Score</p>
+              <p className="text-sm sm:text-base text-muted-foreground">{result.score} of {total} questions right</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 text-left">
               <div className="rounded-lg border p-3 sm:p-4">
                 <div className="text-xl sm:text-2xl font-bold text-primary">{result.score}</div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Correct Answers</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Correct</p>
               </div>
               <div className="rounded-lg border p-3 sm:p-4">
                 <div className="text-xl sm:text-2xl font-bold text-destructive">
                   {total - result.score}
                 </div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Incorrect Answers</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Wrong or skipped</p>
               </div>
             </div>
 
             {/* Document Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <Button onClick={handleDownloadPDF} variant="secondary" className="w-full gap-2 h-10">
-                <Download className="h-4 w-4" />
-                Download PDF
+              <Button onClick={handleDownloadPDF} variant="secondary" className="w-full gap-2 h-11 sm:h-10">
+                <FileDown className="h-4 w-4" />
+                Download result PDF
               </Button>
               <Button
                 onClick={handleSaveToDrive}
                 variant="outline"
-                className="w-full gap-2 h-10 border-primary/25 hover:bg-primary/5 hover:text-primary"
+                className="w-full gap-2 h-11 sm:h-10 border-primary/25 hover:bg-primary/5 hover:text-primary"
                 disabled={savingToDrive}
               >
                 {savingToDrive ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Cloud className="h-4 w-4 text-primary" />
+                  <HardDriveUpload className="h-4 w-4 text-primary" />
                 )}
-                Save to Google Drive
+                {savingToDrive ? 'Saving…' : 'Save PDF to Google Drive'}
               </Button>
             </div>
 
             <div className="pt-3 sm:pt-4 space-y-2 border-t border-border">
-              <Button onClick={() => navigate('/dashboard')} className="w-full">
-                Take Another Test
+              <Button onClick={() => navigate('/dashboard')} className="h-11 w-full sm:h-10">
+                Take another test
               </Button>
-              <Button onClick={() => navigate('/results')} variant="outline" className="w-full">
-                View All Results
+              <Button onClick={() => navigate('/results')} variant="outline" className="h-11 w-full sm:h-10">
+                All my results
               </Button>
             </div>
           </CardContent>

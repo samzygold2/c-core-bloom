@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, BookOpen, HelpCircle, BarChart3, UserCheck, FileText, KeyRound, Inbox, GraduationCap } from 'lucide-react';
+import { Users, ClipboardList, FileQuestion, ChartColumn, UserCheck, CircleCheck, KeyRound, Inbox, LibraryBig } from 'lucide-react';
 import { TestManager } from '@/components/admin/TestManager';
 import { QuestionManager } from '@/components/admin/QuestionManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
@@ -93,14 +93,14 @@ const Admin = () => {
   }
 
   const statCards = [
-    { icon: UserCheck, label: 'My Students', value: stats.assignedUsers },
-    { icon: BookOpen, label: 'Active Tests', value: stats.activeTests },
-    { icon: HelpCircle, label: 'Questions', value: stats.totalQuestions },
-    { icon: FileText, label: 'Completed', value: stats.completedExams },
+    { icon: UserCheck, label: 'My students', value: stats.assignedUsers },
+    { icon: ClipboardList, label: 'Open tests', value: stats.activeTests },
+    { icon: FileQuestion, label: 'Questions written', value: stats.totalQuestions },
+    { icon: CircleCheck, label: 'Tests submitted', value: stats.completedExams },
   ];
 
   return (
-    <DashboardLayout title="Admin Panel" subtitle="Manage students, exams, and questions">
+    <DashboardLayout title="Admin panel" subtitle="Approve students, set tests and write questions">
       <div className="space-y-4 sm:space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -113,7 +113,7 @@ const Admin = () => {
                   </div>
                   <div>
                     <p className="text-lg sm:text-2xl font-bold">{value}</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">{label}</p>
+                    <p className="text-xs text-muted-foreground">{label}</p>
                   </div>
                 </div>
               </CardContent>
@@ -126,36 +126,35 @@ const Admin = () => {
           <TabsList className="bg-card border shadow-sm w-full flex-wrap h-auto p-1 gap-1">
             <TabsTrigger value="my-users" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">My Students</span>
+              <span className="hidden sm:inline">My students</span>
               <span className="sm:hidden">Students</span>
             </TabsTrigger>
             <TabsTrigger value="tests" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
-              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+              <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4" />
               Tests
             </TabsTrigger>
             <TabsTrigger value="questions" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
-              <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Questions</span>
-              <span className="sm:hidden">Q&A</span>
+              <FileQuestion className="h-3 w-3 sm:h-4 sm:w-4" />
+              Questions
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
-              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">My Analytics</span>
+              <ChartColumn className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Analytics</span>
               <span className="sm:hidden">Stats</span>
             </TabsTrigger>
             <TabsTrigger value="submitted" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <Inbox className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Submitted Tests</span>
+              <span className="hidden sm:inline">Submitted tests</span>
               <span className="sm:hidden">Submitted</span>
             </TabsTrigger>
             <TabsTrigger value="password-reset" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
               <KeyRound className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Password Reset</span>
+              <span className="hidden sm:inline">Password resets</span>
               <span className="sm:hidden">Reset</span>
             </TabsTrigger>
             <TabsTrigger value="jamb" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
-              <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">JAMB Questions</span>
+              <LibraryBig className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">JAMB questions</span>
               <span className="sm:hidden">JAMB</span>
             </TabsTrigger>
           </TabsList>

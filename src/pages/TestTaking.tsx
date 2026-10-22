@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { TestTimer } from '@/components/TestTimer';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Send } from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
 
 interface Question {
@@ -60,15 +60,15 @@ const TestTaking = () => {
   useEffect(() => {
     const handleOnline = () => {
       toast({
-        title: 'Connection Restored',
-        description: 'You are back online. Your test progress is fully synced!',
+        title: 'Back online',
+        description: 'Keep going. Your answers are still saved on this device.',
       });
     };
 
     const handleOffline = () => {
       toast({
-        title: 'Connection Lost',
-        description: 'You are offline. Your answers are saved locally and will be restored upon reconnection.',
+        title: 'You are offline',
+        description: 'Keep answering. Your answers are saved on this device; reconnect before you submit.',
         variant: 'destructive',
       });
     };
@@ -95,8 +95,8 @@ const TestTaking = () => {
 
     if (testError || !testData) {
       toast({
-        title: 'Error',
-        description: 'Failed to load test',
+        title: 'Could not open this test',
+        description: 'It may have been closed by your tutor. Try again from My tests.',
         variant: 'destructive',
       });
       navigate('/dashboard');
@@ -120,8 +120,8 @@ const TestTaking = () => {
             setLoading(false);
             
             toast({
-              title: 'Session Restored',
-              description: 'Your previous test session has been successfully restored.',
+              title: 'Picked up where you left off',
+              description: 'Your answers and the clock were restored.',
             });
             return;
           } else {
@@ -140,8 +140,8 @@ const TestTaking = () => {
 
     if (questionsError || !questionsData || questionsData.length === 0) {
       toast({
-        title: 'Error',
-        description: questionsData?.length === 0 ? 'No questions found for this test' : 'Failed to load questions',
+        title: 'Could not load the questions',
+        description: questionsData?.length === 0 ? 'This test has no questions yet. Let your tutor know.' : 'Check your connection and try again.',
         variant: 'destructive',
       });
       navigate('/dashboard');
@@ -180,8 +180,8 @@ const TestTaking = () => {
 
     if (userTestError || !userTest) {
       toast({
-        title: 'Error',
-        description: 'Failed to start test session',
+        title: 'Could not start the test',
+        description: 'Check your connection and try again.',
         variant: 'destructive',
       });
       navigate('/dashboard');
@@ -206,8 +206,8 @@ const TestTaking = () => {
 
     if (error || !profile) {
       toast({
-        title: 'Error',
-        description: 'Failed to verify user status',
+        title: 'Could not check your account',
+        description: 'Check your connection and try again.',
         variant: 'destructive',
       });
       navigate('/dashboard');
@@ -216,8 +216,8 @@ const TestTaking = () => {
 
     if (profile.is_pending || profile.is_waiting) {
       toast({
-        title: 'Access Denied',
-        description: 'Your account must be approved before taking tests',
+        title: 'Not approved yet',
+        description: 'Your tutor needs to approve your account before you can take tests.',
         variant: 'destructive',
       });
       navigate('/dashboard');
@@ -271,15 +271,15 @@ const TestTaking = () => {
       localStorage.removeItem(`jamb_test_session_${testId}_${user!.id}`);
 
       toast({
-        title: 'Success',
-        description: `Test submitted successfully!`,
+        title: 'Test submitted',
+        description: 'Here is how you did.',
       });
       
       navigate(`/results/${userTestId}`);
     } catch (error: unknown) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to submit test';
+      const errorMsg = error instanceof Error ? error.message : 'Your answers are still saved. Try submitting again.';
       toast({
-        title: 'Error',
+        title: 'Could not submit',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -295,8 +295,8 @@ const TestTaking = () => {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading test...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Preparing your questions…</p>
         </div>
       </div>
     );
@@ -304,13 +304,13 @@ const TestTaking = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-3 sm:p-4 lg:p-6">
-      <div className="container mx-auto max-w-3xl lg:max-w-4xl">
+      <div className="mx-auto w-full max-w-3xl lg:max-w-4xl">
         <div className="mb-3 sm:mb-4">
-          <BackButton to="/dashboard" label="Exit Test" />
+          <BackButton to="/dashboard" label="Leave test" className="h-11 sm:h-10" />
         </div>
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg sm:text-2xl font-bold">{test?.title}</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold break-words">{test?.title}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
               Question {currentQuestionIndex + 1} of {questions.length}
             </p>
@@ -330,41 +330,39 @@ const TestTaking = () => {
               onValueChange={(value) => handleAnswerSelect(currentQuestion.id, parseInt(value))}
             >
               {currentQuestion?.shuffledOptions.map((option, displayIndex) => (
-                <div key={displayIndex} className="flex items-start space-x-2 sm:space-x-3 rounded-lg border p-3 sm:p-4 hover:bg-accent transition-colors">
-                  <RadioGroupItem value={option.originalIndex.toString()} id={`option-${displayIndex}`} className="mt-0.5" />
-                  <Label htmlFor={`option-${displayIndex}`} className="flex-1 cursor-pointer text-sm sm:text-base leading-relaxed">
-                    {option.text}
-                  </Label>
-                </div>
+                <Label
+                  key={displayIndex}
+                  htmlFor={`option-${displayIndex}`}
+                  className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border p-3 sm:p-4 text-sm sm:text-base font-normal leading-relaxed transition-colors hover:bg-accent has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"
+                >
+                  <RadioGroupItem value={option.originalIndex.toString()} id={`option-${displayIndex}`} className="mt-1 shrink-0" />
+                  <span className="min-w-0 flex-1 break-words">{option.text}</span>
+                </Label>
               ))}
             </RadioGroup>
 
             <div className="flex justify-between pt-3 sm:pt-4 gap-2">
               <Button
                 variant="outline"
-                size="sm"
-                className="sm:h-10 sm:px-4"
+                className="h-11 flex-1 sm:h-10 sm:flex-none"
                 onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
                 disabled={!canGoPrev}
               >
                 <ChevronLeft className="mr-1 sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Previous</span>
-                <span className="sm:hidden">Prev</span>
+                Previous
               </Button>
 
               {canGoNext ? (
                 <Button
-                  size="sm"
-                  className="sm:h-10 sm:px-4"
+                  className="h-11 flex-1 sm:h-10 sm:flex-none"
                   onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
                 >
                   Next
                   <ChevronRight className="ml-1 sm:ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button size="sm" className="sm:h-10 sm:px-4" onClick={handleSubmit}>
-                  <span className="hidden sm:inline">Submit Test</span>
-                  <span className="sm:hidden">Submit</span>
+                <Button className="h-11 flex-1 sm:h-10 sm:flex-none" onClick={handleSubmit}>
+                  Submit test
                   <Send className="ml-1 sm:ml-2 h-4 w-4" />
                 </Button>
               )}

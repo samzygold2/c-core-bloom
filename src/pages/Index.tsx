@@ -2,8 +2,32 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Clock, Trophy, Shield } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, LibraryBig, ListChecks, ShieldCheck, Timer } from 'lucide-react';
 import { useEffect } from 'react';
+
+const features = [
+  {
+    icon: Timer,
+    title: 'A real exam clock',
+    body: 'Every test runs against a countdown. When time is up, your answers are submitted for you, just like the CBT centre.',
+  },
+  {
+    icon: LibraryBig,
+    title: 'UTME past questions by year',
+    body: 'Pick a year, then drill one subject or sit a 2 to 4 subject mock with subject tabs and an on-screen calculator.',
+  },
+  {
+    icon: ListChecks,
+    title: 'See where the marks went',
+    body: 'Scores per subject on the UTME scale, the right option for every question, and worked explanations where they exist.',
+  },
+];
+
+const steps = [
+  'Create an account and choose your tutor.',
+  'Your tutor approves you.',
+  'Start the tests they set, or practise past questions.',
+];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -18,80 +42,84 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-primary/10 via-background to-secondary/10">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between p-3 sm:p-4">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            <h1 className="text-lg sm:text-2xl font-bold">CBT Platform</h1>
+        <div className="container mx-auto flex items-center justify-between gap-2 px-4 py-2.5 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <BookOpenCheck className="h-5 w-5 sm:h-6 sm:w-6 shrink-0 text-primary" />
+            <span className="truncate text-lg sm:text-xl font-bold">CBT Platform</span>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/admin-login')}>
-              <Shield className="mr-1 sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Admin</span>
+          <div className="flex shrink-0 gap-1 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/admin-login')}
+              aria-label="Tutor sign in"
+              className="h-11 px-3 sm:h-10"
+            >
+              <ShieldCheck className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Tutor sign in</span>
             </Button>
-            <Button size="sm" onClick={() => navigate('/auth')}>
-              <span className="hidden sm:inline">Get Started</span>
-              <span className="sm:hidden">Start</span>
+            <Button variant="outline" onClick={() => navigate('/auth?mode=login')} className="h-11 px-4 sm:h-10">
+              Sign in
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6">
-        <div className="container mx-auto max-w-6xl text-center">
-          <h2 className="mb-3 sm:mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
-            Computer-Based Testing Made Simple
-          </h2>
-          <p className="mb-8 sm:mb-12 text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Take tests online with a modern, user-friendly interface. Track your progress and improve your skills.
-          </p>
-
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 px-2">
-            <Card className="text-left sm:text-center">
-              <CardContent className="pt-4 sm:pt-6 flex sm:flex-col items-center sm:items-center gap-4 sm:gap-0">
-                <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-primary sm:mx-auto sm:mb-4 flex-shrink-0" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">Timed Tests</h3>
-                  <p className="text-sm text-muted-foreground">
-                    30 or 60-minute tests with automatic submission and countdown timer
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="text-left sm:text-center">
-              <CardContent className="pt-4 sm:pt-6 flex sm:flex-col items-center sm:items-center gap-4 sm:gap-0">
-                <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-primary sm:mx-auto sm:mb-4 flex-shrink-0" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">Instant Results</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get your scores immediately after test submission with detailed analytics
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="text-left sm:text-center sm:col-span-2 lg:col-span-1">
-              <CardContent className="pt-4 sm:pt-6 flex sm:flex-col items-center sm:items-center gap-4 sm:gap-0">
-                <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-primary sm:mx-auto sm:mb-4 flex-shrink-0" />
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">Secure & Fair</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Randomized questions and secure authentication ensure test integrity
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:py-16">
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:text-sm">
+              JAMB UTME practice
+            </p>
+            <h1 className="mb-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+              Practise for JAMB the way you will sit it
+            </h1>
+            <p className="mb-8 text-base text-muted-foreground sm:text-lg">
+              Timed computer-based tests from your tutor, past UTME questions sorted by year and subject,
+              and a clear breakdown of every answer once you submit.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button size="lg" onClick={() => navigate('/auth')} className="h-12 px-6 text-base">
+                Create a student account
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button size="lg" variant="outline" onClick={() => navigate('/auth?mode=login')} className="h-12 px-6 text-base">
+                I already have an account
+              </Button>
+            </div>
           </div>
 
-          <Button size="lg" onClick={() => navigate('/auth')} className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6">
-            Start Taking Tests Now
-          </Button>
+          <div className="mt-12 grid grid-cols-1 gap-3 sm:mt-16 sm:gap-4 md:grid-cols-3">
+            {features.map(({ icon: Icon, title, body }) => (
+              <Card key={title}>
+                <CardContent className="flex gap-4 p-4 sm:p-5 md:flex-col md:gap-3">
+                  <div className="h-fit w-fit shrink-0 rounded-lg bg-primary/10 p-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="mb-1 text-base font-semibold">{title}</h2>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <ol className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3 sm:mt-12 sm:grid-cols-3 sm:gap-6">
+            {steps.map((step, i) => (
+              <li key={step} className="flex items-start gap-3 text-sm">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-card text-xs font-semibold text-primary">
+                  {i + 1}
+                </span>
+                <span className="pt-0.5 text-muted-foreground">{step}</span>
+              </li>
+            ))}
+          </ol>
         </div>
       </main>
 
       <footer className="border-t bg-card/50 backdrop-blur-sm py-4 sm:py-6">
-        <div className="container mx-auto text-center text-xs sm:text-sm text-muted-foreground px-4">
-          <p>© {new Date().getFullYear()} CBT Platform. Built with modern technology for the best testing experience.</p>
+        <div className="container mx-auto px-4 text-center text-xs sm:text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} CBT Platform · Practice tests and past questions for the JAMB UTME</p>
         </div>
       </footer>
     </div>

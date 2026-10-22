@@ -127,10 +127,10 @@ const ForgotPassword = () => {
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2">
             <KeyRound className="h-6 w-6 text-primary" />
-            <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl font-bold">Forgot your password?</CardTitle>
           </div>
           <CardDescription>
-            Request an OTP from your admin or reset your password
+            Ask your tutor for a one-time code, then use it here to set a new password.
           </CardDescription>
         </CardHeader>
         <CardContent>

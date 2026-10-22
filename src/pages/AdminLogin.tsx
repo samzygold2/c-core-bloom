@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, AlertCircle } from 'lucide-react';
+import { ShieldCheck, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { z } from 'zod';
 import { BackButton } from '@/components/BackButton';
@@ -168,7 +168,7 @@ const AdminLogin = () => {
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-4">
               <div className="rounded-full bg-primary/10 p-3">
-                <Shield className="h-10 w-10 text-primary" />
+                <ShieldCheck className="h-8 w-8 text-primary" />
               </div>
             </div>
             <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
@@ -231,23 +231,23 @@ const AdminLogin = () => {
       <div className="absolute top-4 left-4">
         <BackButton to="/" label="Home" />
       </div>
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md mt-14 sm:mt-0">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="rounded-full bg-primary/10 p-3">
-              <Shield className="h-10 w-10 text-primary" />
+              <ShieldCheck className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Admin Access</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold">Tutor &amp; admin sign in</CardTitle>
           <CardDescription>
-            Sign in to access the admin panel or request admin access
+            Approve students, set tests and manage your question bank.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Request Access</TabsTrigger>
+              <TabsTrigger value="login">Sign in</TabsTrigger>
+              <TabsTrigger value="signup">Request access</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
@@ -325,7 +325,7 @@ const AdminLogin = () => {
 
                 <Alert>
                   <AlertDescription className="text-sm">
-                    After creating your account, an existing admin must assign you the admin role to access the admin panel.
+                    An existing admin has to give your account the admin role before the admin panel opens for you.
                   </AlertDescription>
                 </Alert>
 

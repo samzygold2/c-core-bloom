@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Trophy } from 'lucide-react';
+import { Calendar, ChartColumn, ChevronRight, CircleCheck, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
@@ -63,7 +63,7 @@ const Results = () => {
   };
 
   return (
-    <DashboardLayout title="My Test Results" subtitle="View your past test scores">
+    <DashboardLayout title="My results" subtitle="Every test you have submitted, newest first">
       {loading ? (
         <div className="grid gap-3 sm:gap-4">
           {[1, 2, 3].map((i) => (
@@ -74,52 +74,63 @@ const Results = () => {
         </div>
       ) : results.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
-            <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
-            <p className="text-base sm:text-lg text-muted-foreground">No test results yet</p>
-            <Button onClick={() => navigate('/dashboard')} className="mt-3 sm:mt-4">
-              Take a Test
+          <CardContent className="flex flex-col items-center justify-center py-10 sm:py-12 text-center">
+            <ChartColumn className="h-10 w-10 text-muted-foreground mb-3 sm:mb-4" />
+            <p className="text-lg font-semibold">No results yet</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Submit a test and your score lands here, with a PDF you can download.
+            </p>
+            <Button onClick={() => navigate('/dashboard')} className="mt-4 h-11 sm:h-10">
+              See my tests
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           {results.map((result) => {
-            const testTitle = result.tests?.title ?? 'Unknown Test';
+            const testTitle = result.tests?.title ?? 'Untitled test';
             const total = result.tests?.total_questions || 1;
             const percentage = ((result.score / total) * 100).toFixed(1);
             return (
-              <Card key={result.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-base sm:text-lg mb-1 sm:mb-2 truncate">{testTitle}</CardTitle>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                          {format(new Date(result.start_time), 'MMM dd, yyyy')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                          {format(new Date(result.start_time), 'HH:mm')}
-                        </span>
+              <button
+                key={result.id}
+                type="button"
+                onClick={() => navigate(`/results/${result.id}`)}
+                className="group min-w-0 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <Card className="h-full transition-shadow group-hover:shadow-lg">
+                  <CardHeader className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base sm:text-lg mb-1.5 truncate">{testTitle}</CardTitle>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {format(new Date(result.start_time), 'd MMM yyyy')}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {format(new Date(result.start_time), 'HH:mm')}
+                          </span>
+                        </div>
                       </div>
+                      <Badge variant={getScoreVariant(result.score, total)} className="shrink-0">
+                        {percentage}%
+                      </Badge>
                     </div>
-                    <Badge variant={getScoreVariant(result.score, total)} className="self-start">
-                      {percentage}%
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 sm:p-6 pt-0">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                    <span className="text-sm sm:text-lg font-semibold">
-                      {result.score} / {total}
-                    </span>
-                    <span className="text-xs sm:text-sm text-muted-foreground">correct answers</span>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between gap-2 p-4 pt-0 sm:p-5 sm:pt-0">
+                    <div className="flex items-center gap-2">
+                      <CircleCheck className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm sm:text-base font-semibold">
+                        {result.score} / {total}
+                      </span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">correct</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </CardContent>
+                </Card>
+              </button>
             );
           })}
         </div>

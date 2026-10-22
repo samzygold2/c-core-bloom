@@ -16,7 +16,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/NavLink';
-import { BarChart3, Settings, Shield, LogOut, Home, User as UserIcon, GraduationCap, Cloud } from 'lucide-react';
+import { ClipboardList, LibraryBig, ChartColumn, HardDrive, ShieldCheck, LogOut, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { UserSettingsDialog } from '@/components/UserSettingsDialog';
@@ -25,8 +25,14 @@ export function AppSidebar() {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { state, toggleSidebar } = useSidebar();
-  const collapsed = state === 'collapsed';
+  const { state, toggleSidebar, isMobile, setOpenMobile } = useSidebar();
+  // The mobile sheet always shows labels, even if the desktop rail was collapsed.
+  const collapsed = state === 'collapsed' && !isMobile;
+
+  // Close the mobile sheet once a link has been followed.
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [location.pathname, setOpenMobile]);
 
   const [profile, setProfile] = useState<{ firstname: string; lastname: string; avatar_url: string | null }>({
     firstname: '',
@@ -59,14 +65,14 @@ export function AppSidebar() {
     (user?.email?.[0] || 'U').toUpperCase();
 
   const mainItems = [
-    { title: 'Dashboard', url: '/dashboard', icon: Home },
-    { title: 'JAMB Practice', url: '/jamb', icon: GraduationCap },
-    { title: 'My Results', url: '/results', icon: BarChart3 },
-    { title: 'Google Drive', url: '/drive', icon: Cloud },
+    { title: 'My tests', url: '/dashboard', icon: ClipboardList },
+    { title: 'JAMB past questions', url: '/jamb', icon: LibraryBig },
+    { title: 'My results', url: '/results', icon: ChartColumn },
+    { title: 'Google Drive', url: '/drive', icon: HardDrive },
   ];
 
   const adminItems = [
-    { title: 'Admin Panel', url: '/admin', icon: Shield },
+    { title: 'Admin panel', url: '/admin', icon: ShieldCheck },
   ];
 
   return (
@@ -76,7 +82,7 @@ export function AppSidebar() {
           <button
             type="button"
             onClick={toggleSidebar}
-            aria-label="Toggle sidebar"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className="shrink-0 rounded-full ring-offset-background transition-all hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Avatar className="h-9 w-9 border border-border">
@@ -110,7 +116,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild tooltip={item.title}>
                       <NavLink
                         to={item.url}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
+                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent max-md:h-11"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
@@ -127,7 +133,7 @@ export function AppSidebar() {
         <SidebarGroup>
           {!collapsed && (
             <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 mb-1">
-              Main
+              Study
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
@@ -138,7 +144,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent max-md:h-11"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -159,10 +165,10 @@ export function AppSidebar() {
           size="sm"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
           onClick={signOut}
-          title="Logout"
+          title="Sign out"
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Logout</span>}
+          {!collapsed && <span>Sign out</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>

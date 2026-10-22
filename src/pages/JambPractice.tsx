@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TestTimer } from '@/components/TestTimer';
-import { Loader2, ChevronLeft, ChevronRight, Calendar, BookOpen, Layers, Clock, ArrowLeft, Play, Calculator, X, Award, CheckCircle2, XCircle, HelpCircle, RefreshCw } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, NotebookPen, Layers, Clock, ArrowLeft, Play, Calculator, X, Award, CheckCircle2, XCircle, BookOpenText, RotateCcw, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SUBJECTS = [
@@ -93,13 +93,17 @@ function CbtCalculator({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-72 bg-card border rounded-2xl shadow-2xl p-4 animate-in fade-in zoom-in-95">
+    <div className="fixed inset-x-3 bottom-3 z-50 bg-card border rounded-2xl shadow-2xl p-3 sm:p-4 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-72 animate-in fade-in zoom-in-95">
       <div className="flex items-center justify-between pb-2 border-b mb-3">
         <div className="flex items-center gap-2 font-semibold text-sm">
           <Calculator className="h-4 w-4 text-primary" />
-          <span>JAMB CBT Calculator</span>
+          <span>Calculator</span>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+        <button
+          onClick={onClose}
+          aria-label="Close calculator"
+          className="-mr-1 flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -108,7 +112,7 @@ function CbtCalculator({ onClose }: { onClose: () => void }) {
         {display}
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2 [&>button]:h-11 sm:[&>button]:h-9">
         <Button variant="destructive" size="sm" onClick={handleClear} className="col-span-2">C / AC</Button>
         <Button variant="outline" size="sm" onClick={handleSqrt}>√</Button>
         <Button variant="secondary" size="sm" onClick={() => handleOp('/')}>÷</Button>
@@ -219,7 +223,7 @@ export default function JambPractice() {
     const fetched = (data || []) as PQ[];
     setLoading(false);
     if (error) { toast.error('Could not load questions. Please try again.'); return; }
-    if (!fetched.length) { toast.error('No questions available for this selection.'); return; }
+    if (!fetched.length) { toast.error('No questions for this subject and year yet. Try another year.'); return; }
     setSelectedSubjects([subject]);
     setQuestions(fetched);
     setIdx(0); setAnswers({}); setShowCalc(false);
@@ -235,7 +239,7 @@ export default function JambPractice() {
     const fetched = (data || []) as PQ[];
     setLoading(false);
     if (error) { toast.error('Could not load questions. Please try again.'); return; }
-    if (!fetched.length) { toast.error('No questions available for the chosen subjects.'); return; }
+    if (!fetched.length) { toast.error('No questions for these subjects and year yet. Try another combination.'); return; }
     // Group questions by subject to keep clean JAMB CBT subject sections
     fetched.sort((a, b) => a.subject.localeCompare(b.subject));
     setQuestions(fetched);
@@ -294,7 +298,7 @@ export default function JambPractice() {
     return subjectBreakdown.reduce((acc, curr) => acc + curr.jambScaled, 0);
   }, [subjectBreakdown, selectedSubjects]);
 
-  const handleTimeUp = () => { toast.info("Time's up! Submitting exam..."); setStep('review'); };
+  const handleTimeUp = () => { toast.info("Time's up. Your answers have been submitted."); setStep('review'); };
 
   const jumpToSubject = (subject: string) => {
     const firstIndex = questions.findIndex(q => q.subject === subject);
@@ -302,20 +306,20 @@ export default function JambPractice() {
   };
 
   const subtitle =
-    step === 'year' ? 'Pick a UTME year to begin' :
-    step === 'mode' ? `Year ${year} • Choose your practice mode` :
-    step === 'single-timer' ? 'Single subject • Set your timer' :
-    step === 'single-subjects' ? `Pick a subject (${timerMins} mins)` :
-    step === 'multi-timer' ? 'Multiple subjects • Set your timer' :
-    step === 'multi-subjects' ? `Select 2–4 subjects (${timerMins} mins)` :
-    step === 'test' ? `${selectedSubjects.map(titleCase).join(' • ')} • UTME ${year}` :
-    'Examination Performance & Solution Review';
+    step === 'year' ? 'Pick the UTME year you want to practise' :
+    step === 'mode' ? `UTME ${year} · One subject or a full mock?` :
+    step === 'single-timer' ? `UTME ${year} · One subject · Set your clock` :
+    step === 'single-subjects' ? `UTME ${year} · ${timerMins} min · Pick a subject` :
+    step === 'multi-timer' ? `UTME ${year} · Full mock · Set your clock` :
+    step === 'multi-subjects' ? `UTME ${year} · ${timerMins} min · Pick 2 to 4 subjects` :
+    step === 'test' ? `${selectedSubjects.map(titleCase).join(' · ')} · UTME ${year}` :
+    `Your score and the answers · UTME ${year}`;
 
   return (
-    <DashboardLayout title="JAMB CBT Portal" subtitle={subtitle}>
+    <DashboardLayout title="JAMB past questions" subtitle={subtitle}>
       <div className="space-y-4 animate-fade-in relative">
         {step !== 'year' && step !== 'test' && (
-          <Button variant="ghost" size="sm" onClick={goBack}>
+          <Button variant="ghost" onClick={goBack} className="-ml-2 h-11 sm:h-10">
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
         )}
@@ -327,11 +331,10 @@ export default function JambPractice() {
               <button
                 key={y}
                 onClick={() => { setYear(y); setStep('mode'); }}
-                className="group rounded-xl border bg-card p-5 sm:p-6 text-left transition-all duration-200 ease-out hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
+                className="group rounded-xl border bg-card px-4 py-4 sm:p-6 text-left transition-all duration-200 ease-out hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
               >
-                <Calendar className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                <div className="mt-3 text-2xl sm:text-3xl font-bold">{y}</div>
-                <div className="text-xs text-muted-foreground mt-1">JAMB UTME Questions</div>
+                <div className="text-2xl sm:text-3xl font-bold tabular-nums group-hover:text-primary transition-colors">{y}</div>
+                <div className="text-xs text-muted-foreground mt-1">UTME paper</div>
               </button>
             ))}
           </div>
@@ -342,19 +345,19 @@ export default function JambPractice() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => { setMode('single'); setTimerMins(null); setStep('single-timer'); }}
-              className="group rounded-xl border bg-card p-6 text-left transition-all duration-200 ease-out hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
+              className="group rounded-xl border bg-card p-5 sm:p-6 text-left transition-all duration-200 ease-out hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
             >
-              <BookOpen className="h-8 w-8 text-primary" />
-              <h3 className="mt-3 text-lg font-semibold">Single Subject Practice</h3>
-              <p className="text-sm text-muted-foreground mt-1">Focus on 1 subject at a time with 40 full CBT questions. 15 or 30 mins timer.</p>
+              <NotebookPen className="h-7 w-7 text-primary" />
+              <h3 className="mt-3 text-lg font-semibold">One subject</h3>
+              <p className="text-sm text-muted-foreground mt-1">Up to 40 questions from a single subject on a 15 or 30 minute clock. Good for revising a weak area.</p>
             </button>
             <button
               onClick={() => { setMode('multi'); setTimerMins(null); setSelectedSubjects([]); setStep('multi-timer'); }}
-              className="group rounded-xl border bg-card p-6 text-left transition-all duration-200 ease-out hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
+              className="group rounded-xl border bg-card p-5 sm:p-6 text-left transition-all duration-200 ease-out hover:border-primary hover:shadow-lg hover:-translate-y-0.5"
             >
-              <Layers className="h-8 w-8 text-primary" />
-              <h3 className="mt-3 text-lg font-semibold">Full CBT Exam Simulation</h3>
-              <p className="text-sm text-muted-foreground mt-1">Combine 2 to 4 UTME subjects together. On-screen subject tabs & timer (30m, 1h, or 2h).</p>
+              <Layers className="h-7 w-7 text-primary" />
+              <h3 className="mt-3 text-lg font-semibold">Full UTME mock</h3>
+              <p className="text-sm text-muted-foreground mt-1">2 to 4 subjects in one sitting with subject tabs, a question navigator and a 30 minute, 1 hour or 2 hour clock.</p>
             </button>
           </div>
         )}
@@ -362,7 +365,7 @@ export default function JambPractice() {
         {/* STEP: SINGLE TIMER */}
         {step === 'single-timer' && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-primary" /> Set Examination Timer</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-lg sm:text-xl"><Clock className="h-5 w-5 text-primary" /> How long do you want?</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {[15, 30].map(m => (
@@ -374,11 +377,11 @@ export default function JambPractice() {
                     }`}
                   >
                     <div className="text-3xl font-bold">{m}</div>
-                    <div className="text-xs text-muted-foreground mt-1">Minutes</div>
+                    <div className="text-xs text-muted-foreground mt-1">minutes</div>
                   </button>
                 ))}
               </div>
-              <Button disabled={!timerMins} onClick={() => setStep('single-subjects')} className="w-full">Continue to Subject Selection</Button>
+              <Button disabled={!timerMins} onClick={() => setStep('single-subjects')} className="h-11 w-full sm:h-10">Choose a subject</Button>
             </CardContent>
           </Card>
         )}
@@ -389,17 +392,17 @@ export default function JambPractice() {
             {(loading || subjectsLoading) && <div className="col-span-full flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
             {!loading && !subjectsLoading && availableSubjects.length === 0 && (
               <Card className="col-span-full"><CardContent className="py-10 text-center text-muted-foreground">
-                No subjects have been made available for {year} yet. Please pick another year.
+                No subjects have questions for {year} yet. Go back and pick another year.
               </CardContent></Card>
             )}
             {!loading && !subjectsLoading && availableSubjects.map(s => (
               <Card key={s} className="transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="p-4 flex items-center justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <div className="font-semibold">{titleCase(s)}</div>
-                    <div className="text-xs text-muted-foreground">{year} • {timerMins} mins • {Math.min(40, available[s])} Questions</div>
+                    <div className="text-xs text-muted-foreground">{Math.min(40, available[s])} questions · {timerMins} min</div>
                   </div>
-                  <Button size="sm" onClick={() => startSingle(s)}>
+                  <Button onClick={() => startSingle(s)} className="h-11 shrink-0 sm:h-10">
                     <Play className="h-4 w-4 mr-1" /> Start
                   </Button>
                 </CardContent>
@@ -412,22 +415,23 @@ export default function JambPractice() {
         {/* STEP: MULTI TIMER */}
         {step === 'multi-timer' && (
           <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-primary" /> Set Examination Duration</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-lg sm:text-xl"><Clock className="h-5 w-5 text-primary" /> How long is your mock?</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
-                {[{ m: 30, l: '30 mins' }, { m: 60, l: '1 hour' }, { m: 120, l: '2 hours (Standard UTME)' }].map(({ m, l }) => (
+                {[{ m: 30, l: '30 min' }, { m: 60, l: '1 hour' }, { m: 120, l: '2 hours', note: 'Real UTME length' }].map(({ m, l, note }) => (
                   <button
                     key={m}
                     onClick={() => setTimerMins(m)}
-                    className={`rounded-xl border p-5 text-center transition-all duration-200 ease-out hover:-translate-y-0.5 ${
+                    className={`rounded-xl border px-2 py-4 sm:p-5 text-center transition-all duration-200 ease-out hover:-translate-y-0.5 ${
                       timerMins === m ? 'border-primary bg-primary/10 shadow-sm' : 'hover:border-primary'
                     }`}
                   >
-                    <div className="text-lg font-bold">{l}</div>
+                    <div className="text-base sm:text-lg font-bold">{l}</div>
+                    {note && <div className="text-[11px] sm:text-xs text-muted-foreground mt-1">{note}</div>}
                   </button>
                 ))}
               </div>
-              <Button disabled={!timerMins} onClick={() => setStep('multi-subjects')} className="w-full">Continue to Subject Selection</Button>
+              <Button disabled={!timerMins} onClick={() => setStep('multi-subjects')} className="h-11 w-full sm:h-10">Choose subjects</Button>
             </CardContent>
           </Card>
         )}
@@ -436,14 +440,14 @@ export default function JambPractice() {
         {step === 'multi-subjects' && (
           <Card>
             <CardHeader>
-              <CardTitle>Select JAMB UTME Subjects</CardTitle>
-              <p className="text-sm text-muted-foreground">Choose minimum 2 and maximum 4 subjects. Selected: {selectedSubjects.length}/4</p>
+              <CardTitle className="text-lg sm:text-xl">Pick your subjects</CardTitle>
+              <p className="text-sm text-muted-foreground">Choose 2 to 4. {selectedSubjects.length} of 4 selected.</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {subjectsLoading && <div className="col-span-full flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>}
                 {!subjectsLoading && availableSubjects.length === 0 && (
-                  <p className="col-span-full text-sm text-muted-foreground">No subjects have been made available for {year} yet.</p>
+                  <p className="col-span-full text-sm text-muted-foreground">No subjects have questions for {year} yet.</p>
                 )}
                 {!subjectsLoading && availableSubjects.map(s => {
                   const sel = selectedSubjects.includes(s);
@@ -453,7 +457,8 @@ export default function JambPractice() {
                       key={s}
                       disabled={disabled}
                       onClick={() => setSelectedSubjects(p => sel ? p.filter(x => x !== s) : [...p, s])}
-                      className={`rounded-lg border p-3 text-sm text-left transition-all duration-200 ease-out hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
+                      aria-pressed={sel}
+                      className={`min-h-11 rounded-lg border px-3 py-2.5 text-sm text-left transition-all duration-200 ease-out hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed ${
                         sel ? 'border-primary bg-primary/10 font-semibold' : 'hover:border-primary'
                       }`}
                     >
@@ -465,9 +470,9 @@ export default function JambPractice() {
               <Button
                 disabled={selectedSubjects.length < 2 || loading}
                 onClick={startMulti}
-                className="w-full"
+                className="h-11 w-full sm:h-10"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" /> Launch Full Examination</>}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" /> Start mock</>}
               </Button>
 
             </CardContent>
@@ -479,8 +484,8 @@ export default function JambPractice() {
           <div className="space-y-3">
             {/* Subject Tabs Navigation (Real CBT Standard) */}
             {testSubjects.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">Subjects:</span>
+              <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-2 border-b sm:mx-0 sm:px-0">
+                <span className="hidden sm:inline text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-1">Subjects</span>
                 {testSubjects.map(sub => {
                   const isActive = questions[idx].subject === sub;
                   const count = questions.filter(q => q.subject === sub).length;
@@ -489,7 +494,7 @@ export default function JambPractice() {
                     <button
                       key={sub}
                       onClick={() => jumpToSubject(sub)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                      className={`shrink-0 px-3 py-2 min-h-9 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                         isActive
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'bg-muted/60 text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -503,9 +508,9 @@ export default function JambPractice() {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4">
-              <Card className="border shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between pb-3 border-b">
-                  <div className="flex items-center gap-2">
+              <Card className="min-w-0 border shadow-sm">
+                <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 p-4 pb-3 border-b sm:p-6 sm:pb-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     <CardTitle className="text-base font-bold">
                       Question {idx + 1} of {questions.length}
                     </CardTitle>
@@ -515,16 +520,17 @@ export default function JambPractice() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowCalc(p => !p)}
-                    className="h-8 gap-1 text-xs"
+                    aria-pressed={showCalc}
+                    className="h-9 gap-1 text-xs"
                   >
                     <Calculator className="h-3.5 w-3.5 text-primary" />
-                    {showCalc ? 'Hide Calculator' : 'Calculator'}
+                    {showCalc ? 'Hide calculator' : 'Calculator'}
                   </Button>
                 </CardHeader>
 
-                <CardContent className="space-y-4 pt-4">
+                <CardContent className="space-y-4 p-4 sm:p-6 sm:pt-4">
                   {/* Question Text */}
-                  <div className="font-medium text-base text-foreground leading-relaxed whitespace-pre-wrap">
+                  <div className="font-medium text-base text-foreground leading-relaxed whitespace-pre-wrap break-words">
                     {questions[idx].question_text}
                   </div>
 
@@ -533,8 +539,8 @@ export default function JambPractice() {
                     <div className="my-3 flex justify-center bg-slate-50 dark:bg-slate-900 border rounded-xl p-3">
                       <img
                         src={questions[idx].image_url!}
-                        alt="Question Diagram"
-                        className="max-h-72 object-contain rounded"
+                        alt="Diagram for this question"
+                        className="max-h-72 max-w-full object-contain rounded"
                       />
                     </div>
                   )}
@@ -549,7 +555,8 @@ export default function JambPractice() {
                         <button
                           key={opt}
                           onClick={() => setAnswers(p => ({ ...p, [questions[idx].id]: opt }))}
-                          className={`w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 flex items-start gap-3 ${
+                          aria-pressed={selected}
+                          className={`w-full min-h-11 text-left px-3 sm:px-4 py-3 rounded-xl border transition-all duration-200 flex items-start gap-3 ${
                             selected
                               ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm ring-1 ring-primary'
                               : 'border-border hover:bg-accent hover:border-slate-300'
@@ -560,16 +567,16 @@ export default function JambPractice() {
                           }`}>
                             {opt.toUpperCase()}
                           </span>
-                          <span className="text-sm mt-0.5">{text}</span>
+                          <span className="min-w-0 break-words text-sm mt-0.5">{text}</span>
                         </button>
                       );
                     })}
                   </div>
 
                   {/* Controls & Shortcuts Hint */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t">
-                    <div className="text-xs text-muted-foreground flex items-center gap-1">
-                      <span>Shortcuts:</span>
+                  <div className="flex flex-col lg:flex-row items-center justify-between gap-3 pt-4 border-t">
+                    <div className="hidden lg:flex text-xs text-muted-foreground items-center gap-1">
+                      <span>Keys:</span>
                       <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">A/B/C/D</kbd>
                       <span>select,</span>
                       <kbd className="px-1.5 py-0.5 bg-muted rounded border text-[10px] font-mono">N</kbd>
@@ -578,17 +585,17 @@ export default function JambPractice() {
                       <span>prev</span>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                      <Button variant="outline" size="sm" disabled={idx === 0} onClick={() => setIdx(i => i - 1)}>
+                    <div className="flex items-center gap-2 w-full lg:w-auto justify-end">
+                      <Button variant="outline" disabled={idx === 0} onClick={() => setIdx(i => i - 1)} className="h-11 flex-1 sm:h-9 sm:flex-none">
                         <ChevronLeft className="h-4 w-4 mr-1" /> Previous
                       </Button>
                       {idx === questions.length - 1 ? (
-                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setStep('review')}>
-                          Submit Examination
+                        <Button className="h-11 flex-1 sm:h-9 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setStep('review')}>
+                          Submit exam <Send className="h-4 w-4 ml-1" />
                         </Button>
                       ) : (
-                        <Button size="sm" onClick={() => setIdx(i => i + 1)}>
-                          Next Question <ChevronRight className="h-4 w-4 ml-1" />
+                        <Button onClick={() => setIdx(i => i + 1)} className="h-11 flex-1 sm:h-9 sm:flex-none">
+                          Next <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       )}
                     </div>
@@ -596,20 +603,25 @@ export default function JambPractice() {
                 </CardContent>
               </Card>
 
-              {/* Sidebar Navigator */}
-              <div className="space-y-3">
-                {timerMins && <TestTimer durationMinutes={timerMins} onTimeUp={handleTimeUp} />}
+              {/* Sidebar Navigator. Below lg the wrapper dissolves so the
+                  timer can sit above the question and the navigator below it. */}
+              <div className="contents lg:block lg:space-y-3">
+                {timerMins && (
+                  <div className="order-first lg:order-none">
+                    <TestTimer durationMinutes={timerMins} onTimeUp={handleTimeUp} />
+                  </div>
+                )}
 
                 <Card className="border shadow-sm">
                   <CardContent className="p-3.5 space-y-3">
                     <div className="flex items-center justify-between text-xs font-semibold">
-                      <span>Question Navigator</span>
+                      <span>Questions</span>
                       <span className="text-muted-foreground">
-                        {Object.keys(answers).length}/{questions.length} Answered
+                        {Object.keys(answers).length} of {questions.length} answered
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-5 gap-1.5 max-h-[320px] overflow-y-auto pr-1">
+                    <div className="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-5 gap-1.5 max-h-[320px] overflow-y-auto pr-1">
                       {questions.map((q, i) => {
                         const isCurrent = i === idx;
                         const isAnswered = !!answers[q.id];
@@ -617,7 +629,8 @@ export default function JambPractice() {
                           <button
                             key={q.id}
                             onClick={() => setIdx(i)}
-                            className={`h-8 text-xs font-semibold rounded-lg border transition-all ${
+                            aria-label={`Question ${i + 1}${isAnswered ? ', answered' : ''}`}
+                            className={`h-9 text-xs font-semibold rounded-lg border transition-all ${
                               isCurrent
                                 ? 'border-primary ring-2 ring-primary ring-offset-1 bg-primary text-primary-foreground'
                                 : isAnswered
@@ -646,9 +659,9 @@ export default function JambPractice() {
                       variant="outline"
                       size="sm"
                       onClick={() => setStep('review')}
-                      className="w-full text-xs text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                      className="h-11 sm:h-9 w-full text-xs text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
                     >
-                      Finish & Submit Exam
+                      Submit exam now
                     </Button>
                   </CardContent>
                 </Card>
@@ -665,25 +678,25 @@ export default function JambPractice() {
           <div className="space-y-4">
             {/* Header Score Card */}
             <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
                   <div className="space-y-2 text-center md:text-left">
-                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Official CBT Result Sheet</Badge>
-                    <h2 className="text-2xl font-bold">JAMB UTME Examination Score</h2>
+                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">Practice result</Badge>
+                    <h2 className="text-xl sm:text-2xl font-bold">Your UTME practice score</h2>
                     <p className="text-sm text-slate-300">
-                      Year {year} • {selectedSubjects.map(titleCase).join(', ')}
+                      UTME {year} · {selectedSubjects.map(titleCase).join(', ')}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-6">
+                  <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
                     <div className="text-center px-4 py-2 bg-white/10 rounded-2xl border border-white/10">
-                      <div className="text-xs text-slate-300 uppercase tracking-wider">Raw Score</div>
-                      <div className="text-3xl font-extrabold text-white mt-0.5">{score} / {questions.length}</div>
+                      <div className="text-xs text-slate-300 uppercase tracking-wider">Correct</div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">{score} / {questions.length}</div>
                     </div>
 
                     <div className="text-center px-5 py-2 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
-                      <div className="text-xs text-emerald-300 uppercase tracking-wider">UTME Score</div>
-                      <div className="text-3xl font-extrabold text-emerald-400 mt-0.5">{totalJambScore} <span className="text-xs font-normal text-slate-300">/ {selectedSubjects.length === 1 ? 100 : 400}</span></div>
+                      <div className="text-xs text-emerald-300 uppercase tracking-wider">UTME score</div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-0.5">{totalJambScore} <span className="text-xs font-normal text-slate-300">/ {selectedSubjects.length === 1 ? 100 : 400}</span></div>
                     </div>
                   </div>
                 </div>
@@ -694,7 +707,7 @@ export default function JambPractice() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" /> Subject Score Breakdown
+                  <Award className="h-5 w-5 text-primary" /> Score by subject
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -703,19 +716,19 @@ export default function JambPractice() {
                     <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b">
                       <tr>
                         <th className="p-3">Subject</th>
-                        <th className="p-3 text-center">Questions</th>
-                        <th className="p-3 text-center">Answered</th>
+                        <th className="hidden p-3 text-center sm:table-cell">Questions</th>
+                        <th className="hidden p-3 text-center sm:table-cell">Answered</th>
                         <th className="p-3 text-center">Correct</th>
                         <th className="p-3 text-center">Accuracy</th>
-                        <th className="p-3 text-right">JAMB Scale (/100)</th>
+                        <th className="p-3 text-right whitespace-nowrap">Score /100</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {subjectBreakdown.map(sb => (
                         <tr key={sb.subject} className="hover:bg-accent/50">
                           <td className="p-3 font-semibold">{titleCase(sb.subject)}</td>
-                          <td className="p-3 text-center">{sb.total}</td>
-                          <td className="p-3 text-center">{sb.answered}</td>
+                          <td className="hidden p-3 text-center sm:table-cell">{sb.total}</td>
+                          <td className="hidden p-3 text-center sm:table-cell">{sb.answered}</td>
                           <td className="p-3 text-center text-emerald-600 font-bold">{sb.correct}</td>
                           <td className="p-3 text-center font-semibold">{sb.percent}%</td>
                           <td className="p-3 text-right font-bold text-primary">{sb.jambScaled}</td>
@@ -730,20 +743,20 @@ export default function JambPractice() {
             {/* Detailed Question Review List */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Solutions & Detailed Explanations</CardTitle>
+                <CardTitle className="text-base">Answers and explanations</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 max-h-[600px] overflow-y-auto">
+              <CardContent className="space-y-4 lg:max-h-[600px] lg:overflow-y-auto">
                 {questions.map((q, i) => {
                   const userChoice = (answers[q.id] || '').toLowerCase();
                   const correctChoice = (q.correct_answer || '').toLowerCase();
                   const isCorrect = userChoice === correctChoice;
 
                   return (
-                    <div key={q.id} className={`border rounded-xl p-4 space-y-3 transition-all ${
+                    <div key={q.id} className={`border rounded-xl p-3 sm:p-4 space-y-3 transition-all ${
                       isCorrect ? 'border-emerald-200 bg-emerald-50/30 dark:bg-emerald-950/10' : 'border-rose-200 bg-rose-50/30 dark:bg-rose-950/10'
                     }`}>
                       <div className="flex items-start justify-between gap-3">
-                        <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                        <div className="min-w-0 text-sm font-medium leading-relaxed whitespace-pre-wrap break-words">
                           <span className="font-bold mr-1">{i + 1}.</span> {q.question_text}
                         </div>
                         <Badge variant="outline" className="shrink-0 text-xs">{titleCase(q.subject)}</Badge>
@@ -752,7 +765,7 @@ export default function JambPractice() {
                       {/* Image if present */}
                       {q.image_url && (
                         <div className="my-2 flex justify-start">
-                          <img src={q.image_url} alt="Question Diagram" className="max-h-52 object-contain rounded border bg-white p-2" />
+                          <img src={q.image_url} alt="Diagram for this question" className="max-h-52 max-w-full object-contain rounded border bg-white p-2" />
                         </div>
                       )}
 
@@ -776,7 +789,7 @@ export default function JambPractice() {
                               }`}
                             >
                               <span className="font-bold">{opt.toUpperCase()}.</span>
-                              <span>{optText}</span>
+                              <span className="min-w-0 break-words">{optText}</span>
                               {isAns && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 ml-auto shrink-0" />}
                               {isUser && !isAns && <XCircle className="h-3.5 w-3.5 text-rose-600 ml-auto shrink-0" />}
                             </div>
@@ -788,7 +801,7 @@ export default function JambPractice() {
                       {q.explanation && (
                         <div className="text-xs bg-slate-100 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1">
                           <div className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                            <HelpCircle className="h-3.5 w-3.5 text-primary" /> Explanation / Solution:
+                            <BookOpenText className="h-3.5 w-3.5 text-primary" /> Explanation
                           </div>
                           <div className="text-slate-600 dark:text-slate-300 whitespace-pre-wrap">{q.explanation}</div>
                         </div>
@@ -802,9 +815,9 @@ export default function JambPractice() {
                     setStep('year'); setYear(null); setMode(null); setTimerMins(null);
                     setSelectedSubjects([]); setQuestions([]); setAnswers({}); setIdx(0); setShowCalc(false);
                   }}
-                  className="w-full mt-4"
+                  className="h-11 w-full mt-4 sm:h-10"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" /> Start Another Examination
+                  <RotateCcw className="h-4 w-4 mr-2" /> Practise another paper
                 </Button>
               </CardContent>
             </Card>

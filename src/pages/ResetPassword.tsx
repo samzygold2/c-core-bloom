@@ -76,13 +76,13 @@ const ResetPassword = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
       <div className="absolute top-4 left-4">
-        <BackButton to="/auth" label="Back to Login" />
+        <BackButton to="/auth?mode=login" label="Back to sign in" />
       </div>
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md mt-14 sm:mt-0">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold">Set a new password</CardTitle>
           <CardDescription>
-            Enter your new password below
+            Use at least 8 characters. You will sign in with it next time.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, BookOpen } from 'lucide-react';
+import { Clock, Hourglass, ListOrdered, ClipboardX, Play, UserRoundSearch } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
@@ -34,8 +34,8 @@ const Dashboard = () => {
 
     if (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load tests',
+        title: 'Could not load your tests',
+        description: 'Check your connection and refresh the page.',
         variant: 'destructive',
       });
     } else {
@@ -85,14 +85,14 @@ const Dashboard = () => {
   };
 
   return (
-    <DashboardLayout title="Available Tests" subtitle="Select a test to begin">
+    <DashboardLayout title="My tests" subtitle="Tests your tutor has opened for you">
       {userStatus?.is_pending && (
         <Card className="mb-6">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Account Pending Approval</h3>
+            <Hourglass className="h-10 w-10 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-center">Waiting for your tutor to approve you</h3>
             <p className="text-muted-foreground text-center max-w-md">
-              Your account is awaiting approval from your assigned admin. You'll be able to access tests once approved.
+              Your tests will appear here as soon as your tutor accepts your account. Nothing else to do for now.
             </p>
           </CardContent>
         </Card>
@@ -101,10 +101,10 @@ const Dashboard = () => {
       {userStatus?.is_waiting && (
         <Card className="mb-6">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Awaiting Admin Assignment</h3>
+            <UserRoundSearch className="h-10 w-10 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-center">You don't have a tutor yet</h3>
             <p className="text-muted-foreground text-center max-w-md">
-              You're waiting to be assigned to an admin. Please check back later.
+              An admin still needs to link your account to a tutor. Check back later.
             </p>
           </CardContent>
         </Card>
@@ -113,7 +113,7 @@ const Dashboard = () => {
       {!userStatus?.is_pending && !userStatus?.is_waiting && (
         <>
           {loading ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3, 4].map((i) => (
                 <Card key={i} className="animate-pulse">
                   <CardHeader className="h-32 bg-muted" />
@@ -123,33 +123,40 @@ const Dashboard = () => {
           ) : tests.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg text-muted-foreground">No active tests available</p>
+                <ClipboardX className="h-10 w-10 text-muted-foreground mb-4" />
+                <p className="text-lg font-semibold">No tests open right now</p>
+                <p className="mt-1 max-w-sm text-center text-sm text-muted-foreground">
+                  When your tutor publishes a test it shows up here. Meanwhile you can practise JAMB past questions.
+                </p>
+                <Button variant="outline" onClick={() => navigate('/jamb')} className="mt-4 h-11 sm:h-10">
+                  Practise past questions
+                </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {tests.map((test) => (
                 <Card key={test.id} className="hover:shadow-lg transition-shadow flex flex-col">
-                  <CardHeader className="pb-2 flex-1">
-                    <CardTitle className="text-lg">{test.title}</CardTitle>
-                    <CardDescription className="flex flex-wrap items-center gap-3 text-xs">
+                  <CardHeader className="pb-3 flex-1 space-y-2">
+                    <Badge className="w-fit" variant="secondary">
+                      {test.duration_minutes === 30 ? 'Short test' : 'Full test'}
+                    </Badge>
+                    <CardTitle className="text-lg leading-snug break-words">{test.title}</CardTitle>
+                    <CardDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3.5 w-3.5" />
                         {test.duration_minutes} min
                       </span>
                       <span className="flex items-center gap-1">
-                        <BookOpen className="h-3 w-3" />
+                        <ListOrdered className="h-3.5 w-3.5" />
                         {test.total_questions} questions
                       </span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Badge className="mb-3" variant="secondary">
-                      {test.duration_minutes === 30 ? 'Short Test' : 'Full Test'}
-                    </Badge>
-                    <Button onClick={() => startTest(test.id)} className="w-full">
-                      Start Test
+                    <Button onClick={() => startTest(test.id)} className="h-11 w-full sm:h-10">
+                      <Play className="mr-2 h-4 w-4" />
+                      Start test
                     </Button>
                   </CardContent>
                 </Card>

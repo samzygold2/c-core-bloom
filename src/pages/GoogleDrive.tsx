@@ -15,8 +15,8 @@ import {
   ExternalLink,
   RefreshCw,
   LogOut,
-  Sparkles,
   Cloud,
+  HardDrive,
   CheckCircle2,
   FileSpreadsheet,
   FileJson,
@@ -77,7 +77,7 @@ export default function GoogleDrivePage() {
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Failed to retrieve files',
+        title: 'Could not load your Drive files',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -122,15 +122,15 @@ export default function GoogleDrivePage() {
         setGoogleUser(result.user);
         setAccessToken(result.accessToken);
         toast({
-          title: 'Google Drive Connected',
-          description: `Successfully authenticated as ${result.user.email}`,
+          title: 'Google Drive connected',
+          description: `Signed in as ${result.user.email}`,
         });
         fetchDriveFiles(result.accessToken);
       }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Authentication Failed',
+        title: 'Google sign-in did not finish',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -149,13 +149,13 @@ export default function GoogleDrivePage() {
       setAccessToken(null);
       setFiles([]);
       toast({
-        title: 'Disconnected',
-        description: 'Google Drive account has been disconnected.',
+        title: 'Google Drive disconnected',
+        description: 'Files already saved stay in your Drive.',
       });
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Disconnection Failed',
+        title: 'Could not disconnect',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -193,14 +193,14 @@ export default function GoogleDrivePage() {
 
       setUploadProgress(100);
       toast({
-        title: 'Upload Successful',
-        description: `"${file.name}" was successfully uploaded to Google Drive.`,
+        title: 'Uploaded',
+        description: `"${file.name}" is now in your Drive.`,
       });
       fetchDriveFiles(accessToken);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Upload Failed',
+        title: 'Upload did not finish',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -228,15 +228,15 @@ export default function GoogleDrivePage() {
       }
 
       toast({
-        title: 'File Deleted',
-        description: `"${filename}" has been permanently removed from Google Drive.`,
+        title: 'File deleted',
+        description: `"${filename}" was removed from your Drive.`,
       });
 
       setFiles((prev) => prev.filter((f) => f.id !== fileId));
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Deletion Failed',
+        title: 'Could not delete the file',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -297,15 +297,15 @@ export default function GoogleDrivePage() {
       }
 
       toast({
-        title: 'CBT Backup Saved',
-        description: `Your exam results backup has been saved to Google Drive as "${filename}"`,
+        title: 'Scores backed up',
+        description: `Saved to your Drive as "${filename}"`,
       });
 
       fetchDriveFiles(accessToken);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast({
-        title: 'Backup Failed',
+        title: 'Backup did not finish',
         description: errorMsg,
         variant: 'destructive',
       });
@@ -339,11 +339,11 @@ export default function GoogleDrivePage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Google Drive" subtitle="Cloud Storage Integration">
+      <DashboardLayout title="Google Drive" subtitle="Keep result PDFs and score backups in your own Drive">
         <div className="flex h-64 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground font-mono">Loading credentials...</p>
+            <p className="text-sm text-muted-foreground">Checking your Google connection…</p>
           </div>
         </div>
       </DashboardLayout>
@@ -351,22 +351,19 @@ export default function GoogleDrivePage() {
   }
 
   return (
-    <DashboardLayout title="Google Drive" subtitle="Manage exam results & materials in the cloud">
+    <DashboardLayout title="Google Drive" subtitle="Keep result PDFs and score backups in your own Drive">
       <div className="space-y-6 max-w-6xl mx-auto">
         <Card className="border-primary/20 overflow-hidden shadow-md">
-          <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
-            <Cloud className="h-36 w-36 text-primary" />
-          </div>
-          <CardHeader className="pb-4">
+          <CardHeader className="p-4 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              <CardTitle className="text-xl">Cloud Connection</CardTitle>
+              <HardDrive className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg sm:text-xl">Your Google account</CardTitle>
             </div>
             <CardDescription>
-              Link your Google Drive account with our Computer Based Testing platform.
+              Connect once, then save result PDFs and score backups straight to your Drive.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             {googleUser && accessToken ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border bg-primary/5">
                 <div className="flex items-center gap-3 min-w-0">
@@ -394,7 +391,7 @@ export default function GoogleDrivePage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-1.5 border-primary/30"
+                    className="h-10 gap-1.5 border-primary/30"
                     onClick={handleBackupCbtData}
                     disabled={backingUp}
                   >
@@ -403,13 +400,13 @@ export default function GoogleDrivePage() {
                     ) : (
                       <FileJson className="h-3.5 w-3.5 text-primary" />
                     )}
-                    {backingUp ? 'Backing up...' : 'Backup CBT Scores'}
+                    {backingUp ? 'Backing up…' : 'Back up my scores'}
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={handleGoogleDisconnect}
-                    className="gap-1.5 text-muted-foreground hover:text-destructive"
+                    className="h-10 gap-1.5 text-muted-foreground hover:text-destructive"
                   >
                     <LogOut className="h-3.5 w-3.5" />
                     Disconnect
@@ -417,19 +414,19 @@ export default function GoogleDrivePage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed rounded-xl bg-muted/20 space-y-4">
+              <div className="flex flex-col items-center justify-center p-5 sm:p-8 text-center border-2 border-dashed rounded-xl bg-muted/20 space-y-4">
                 <div className="p-3 bg-primary/10 rounded-full text-primary">
                   <Cloud className="h-8 w-8" />
                 </div>
                 <div>
-                  <h4 className="font-semibold">Connect Google Account</h4>
-                  <p className="text-xs text-muted-foreground max-w-sm mt-1">
-                    Connecting allows you to save result PDFs, backup your scores history, and keep study material synced securely.
+                  <h4 className="font-semibold">Not connected yet</h4>
+                  <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                    Sign in with Google to save result PDFs, back up your score history and upload your own study files.
                   </p>
                 </div>
                 <button
                   onClick={handleGoogleConnect}
-                  className="gsi-material-button font-sans border shadow-sm rounded-lg py-2 hover:bg-muted/10 transition-colors"
+                  className="gsi-material-button min-h-11 font-sans border bg-card shadow-sm rounded-lg py-2 hover:bg-muted/40 transition-colors"
                 >
                   <div className="gsi-material-button-state"></div>
                   <div className="gsi-material-button-content-wrapper flex items-center justify-center gap-3 px-4">
@@ -456,10 +453,10 @@ export default function GoogleDrivePage() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Upload className="h-4 w-4 text-primary" />
-                  Upload Center
+                  Upload a file
                 </CardTitle>
                 <CardDescription>
-                  Upload any local file or document directly to Google Drive.
+                  Send a file from this device to your Drive.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -470,8 +467,8 @@ export default function GoogleDrivePage() {
                   <div className="p-3 bg-muted group-hover:bg-primary/10 rounded-full text-muted-foreground group-hover:text-primary transition-colors mb-3">
                     <Upload className="h-6 w-6" />
                   </div>
-                  <p className="text-sm font-medium">Click or drag files here</p>
-                  <p className="text-xs text-muted-foreground mt-1">Accepts PDFs, images, spreadsheets, and JSON backups</p>
+                  <p className="text-sm font-medium">Choose a file</p>
+                  <p className="text-xs text-muted-foreground mt-1">PDFs, images, spreadsheets or JSON backups</p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -496,22 +493,23 @@ export default function GoogleDrivePage() {
               <CardHeader className="pb-3 border-b">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg">Google Drive Files</CardTitle>
+                    <CardTitle className="text-lg">Files in your Drive</CardTitle>
                     <CardDescription>
-                      Browse, view, and organize files stored in your Google Drive storage.
+                      Open or delete files this app can see in your Drive.
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="Search files..."
+                      placeholder="Search by file name"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="max-w-xs h-9"
+                      className="h-10 min-w-0 flex-1 sm:w-56 sm:flex-none"
                     />
                     <Button
                       size="icon"
                       variant="outline"
-                      className="h-9 w-9"
+                      aria-label="Refresh file list"
+                      className="h-10 w-10 shrink-0"
                       onClick={() => fetchDriveFiles(accessToken)}
                       disabled={loadingFiles}
                     >
@@ -525,21 +523,21 @@ export default function GoogleDrivePage() {
                   <div className="flex h-64 items-center justify-center">
                     <div className="flex flex-col items-center gap-2">
                       <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground font-mono">Retrieving Drive files...</p>
+                      <p className="text-xs text-muted-foreground">Loading your files…</p>
                     </div>
                   </div>
                 ) : filteredFiles.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-64 p-6 text-center text-muted-foreground">
-                    <Cloud className="h-12 w-12 text-muted/30 mb-2" />
-                    <p className="text-sm">No files found matching your search</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Upload exam data or materials to get started.</p>
+                    <Cloud className="h-10 w-10 text-muted-foreground/40 mb-2" />
+                    <p className="text-sm">{searchQuery ? 'No file names match that search' : 'No files yet'}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Save a result PDF or upload a file and it will show here.</p>
                   </div>
                 ) : (
                   <div className="divide-y max-h-[500px] overflow-y-auto">
                     {filteredFiles.map((file) => (
                       <div
                         key={file.id}
-                        className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors group"
+                        className="flex items-center justify-between gap-2 p-3 sm:p-4 hover:bg-muted/30 transition-colors group"
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="p-2 rounded-lg bg-background border shadow-sm shrink-0">
@@ -557,15 +555,15 @@ export default function GoogleDrivePage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <div className="flex shrink-0 items-center gap-1 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">
                           {file.webViewLink && (
                             <Button
                               variant="ghost"
                               size="icon"
                               asChild
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              className="h-10 w-10 lg:h-8 lg:w-8 text-muted-foreground hover:text-foreground"
                             >
-                              <a href={file.webViewLink} target="_blank" rel="noopener noreferrer" title="View file">
+                              <a href={file.webViewLink} target="_blank" rel="noopener noreferrer" title="Open in Google Drive" aria-label={`Open ${file.name} in Google Drive`}>
                                 <ExternalLink className="h-4 w-4" />
                               </a>
                             </Button>
@@ -574,8 +572,9 @@ export default function GoogleDrivePage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteFile(file.id, file.name)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            className="h-10 w-10 lg:h-8 lg:w-8 text-muted-foreground hover:text-destructive"
                             title="Delete file"
+                            aria-label={`Delete ${file.name}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
