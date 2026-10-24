@@ -1,4 +1,9 @@
-const isExamPath = () => /\/test\//.test(window.location.pathname);
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+import { confirmTestExit, isTestPath, shouldConfirmTestExit } from "./navigation";
+
+const isExamPath = () => isTestPath(window.location.pathname);
+let initialized = false;
 
 interface WakeLockSentinelLike {
   release: () => Promise<void>;
@@ -55,14 +60,13 @@ const showExitToast = (message: string) => {
   toast.style.bottom = "calc(var(--safe-area-bottom, 0px) + 24px)";
   toast.style.left = "50%";
   toast.style.transform = "translateX(-50%)";
-  toast.style.backgroundColor = "rgba(15, 23, 42, 0.95)";
-  toast.style.color = "#f8fafc";
+  toast.style.backgroundColor = "hsl(var(--foreground))";
+  toast.style.color = "hsl(var(--background))";
   toast.style.padding = "8px 16px";
   toast.style.borderRadius = "20px";
   toast.style.fontSize = "13px";
   toast.style.fontWeight = "500";
   toast.style.zIndex = "99999";
-  toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.4)";
   toast.style.pointerEvents = "none";
   toast.style.transition = "opacity 0.2s ease";
 
@@ -99,7 +103,7 @@ const closeOpenOverlays = (): boolean => {
   );
 
   if (openOverlay) {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    openOverlay.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
     return true;
   }
 
@@ -115,14 +119,6 @@ const handleBackButton = () => {
     return;
   }
 
-  // 2. Exam protection: prevent accidental exit
-  if (isExamPath()) {
-    const shouldLeave = window.confirm(
-      "You are currently taking an active exam. Are you sure you want to leave? Your exam will not be submitted."
-    );
-    if (!shouldLeave) return;
-  }
-
   // 3. Double-back-to-exit on root paths
   const rootPaths = ["/", "/dashboard", "/admin", "/auth", "/super-admin"];
   const isRootScreen = rootPaths.includes(window.location.pathname) || window.history.length <= 1;
@@ -130,8 +126,9 @@ const handleBackButton = () => {
   if (isRootScreen) {
     const now = Date.now();
     if (now - lastBackPressTime < 2000) {
-      // Exit or navigate to root
-      if (window.history.length > 1) {
+      if (Capacitor.isNativePlatform()) {
+        void App.exitApp();
+      } else if (window.history.length > 1) {
         window.history.back();
       }
     } else {
@@ -164,6 +161,8 @@ const handleDeepLinkUrl = (urlStr: string) => {
 };
 
 export const initMobileShell = () => {
+  if (initialized) return;
+  initialized = true;
   // Setup CSS safe area environment variables
   document.documentElement.style.setProperty("--safe-area-top", "env(safe-area-inset-top, 0px)");
   document.documentElement.style.setProperty("--safe-area-right", "env(safe-area-inset-right, 0px)");
@@ -177,7 +176,8 @@ export const initMobileShell = () => {
     metaTheme.setAttribute("name", "theme-color");
     document.head.appendChild(metaTheme);
   }
-  metaTheme.setAttribute("content", "#020817");
+  const background = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
+  if (background) metaTheme.setAttribute("content", `hsl(${background})`);
 
   // Visual viewport height adjustment for on-screen keyboards
   const onResize = () => {
@@ -207,26 +207,38 @@ export const initMobileShell = () => {
     }
   };
 
-  checkWakeLockState();
-  window.addEventListener("popstate", checkWakeLockState);
-
-  // Back button protection during active exams
-  window.addEventListener("popstate", (e) => {
-    if (isExamPath()) {
-      const shouldLeave = window.confirm(
-        "You are currently taking an active exam. Are you sure you want to leave? Your exam will not be submitted."
-      );
-      if (!shouldLeave) {
-        window.history.pushState(null, "", window.location.href);
-      } else {
-        releaseScreenWakeLock();
-      }
+  // Observe SPA navigation as well as browser/native back. Keep the source URL
+  // and history entry so cancel restores the exam rather than the destination.
+  let previousUrl = window.location.href;
+  let previousState = window.history.state;
+  const originalPush = window.history.pushState.bind(window.history);
+  const originalReplace = window.history.replaceState.bind(window.history);
+  const watchNavigation = (method: typeof originalPush) =>
+    (data: unknown, unused: string, url?: string | URL | null) => {
+      const target = new URL(String(url ?? window.location.href), window.location.href);
+      if (shouldConfirmTestExit(window.location.pathname, target.pathname) && !confirmTestExit()) return;
+      method(data, unused, url);
+      previousUrl = window.location.href;
+      previousState = window.history.state;
+      checkWakeLockState();
+    };
+  window.history.pushState = watchNavigation(originalPush);
+  window.history.replaceState = watchNavigation(originalReplace);
+  window.addEventListener("popstate", (event) => {
+    if (shouldConfirmTestExit(new URL(previousUrl).pathname, window.location.pathname) && !confirmTestExit()) {
+      originalPush(previousState, "", previousUrl);
+      event.stopImmediatePropagation();
+      return;
     }
+    previousUrl = window.location.href;
+    previousState = window.history.state;
+    checkWakeLockState();
   });
+  checkWakeLockState();
 
   // Physical escape / back button listener
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
+    if (event.key === "Escape" && !event.defaultPrevented && event.isTrusted && !document.querySelector('[role="dialog"], [role="alertdialog"]')) {
       handleBackButton();
     }
   });
@@ -251,4 +263,17 @@ export const initMobileShell = () => {
 
   // Custom scheme link dispatcher
   (window as unknown as { __handleAppUrl?: (url: string) => void }).__handleAppUrl = handleDeepLinkUrl;
+  if (Capacitor.isNativePlatform()) {
+    void App.addListener("backButton", handleBackButton);
+    void App.addListener("appUrlOpen", ({ url }) => handleDeepLinkUrl(url));
+    void App.getLaunchUrl().then((launch) => { if (launch?.url) handleDeepLinkUrl(launch.url); });
+    void App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) {
+        checkWakeLockState();
+        window.dispatchEvent(new Event("focus"));
+      } else {
+        void releaseScreenWakeLock();
+      }
+    });
+  }
 };

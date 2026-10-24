@@ -4,12 +4,13 @@ import App from "../../src/App";
 import "../../src/index.css";
 import "./styles/mobile.css";
 import { initMobileShell } from "./native";
-import { detectDeviceProfile } from "./perf/deviceProfile";
+import "./perf/deviceProfile";
 
 initMobileShell();
-detectDeviceProfile();
 
-createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root");
+if (!root) throw new Error("Mobile app root is missing");
+createRoot(root).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>

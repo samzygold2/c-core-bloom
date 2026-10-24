@@ -13,7 +13,7 @@ html, body, #root {
   min-height: var(--app-height);
   height: var(--app-height);
   margin: 0;
-  background: #020817;
+  background: hsl(var(--background));
   overscroll-behavior-y: none;
   overscroll-behavior-x: none;
   -webkit-tap-highlight-color: transparent;
@@ -76,8 +76,6 @@ input,
 textarea,
 select,
 [role="button"],
-[role="radio"],
-[role="checkbox"],
 [role="tab"],
 [data-radix-collection-item],
 .clickable-item {
@@ -251,12 +249,6 @@ html.tier-low * {
   text-shadow: none !important;
 }
 
-html.tier-low .shadow-xl,
-html.tier-low .shadow-2xl,
-html.tier-low .shadow-lg {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
-}
-
 html.tier-low *,
 html.tier-low *::before,
 html.tier-low *::after {
@@ -264,10 +256,6 @@ html.tier-low *::after {
 }
 
 /* MID TIER: Balanced visual transitions without excessive blurs */
-html.tier-mid .shadow-2xl {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
 /* HIGH TIER: Full fidelity, dynamic lighting and glassmorphism */
 html.tier-high {
   /* Retains full styles */

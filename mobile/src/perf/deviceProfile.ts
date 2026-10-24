@@ -31,6 +31,7 @@ export interface DeviceProfile {
 }
 
 let cachedProfile: DeviceProfile | null = null;
+let pendingProfile: Promise<DeviceProfile> | null = null;
 const listeners = new Set<(profile: DeviceProfile) => void>();
 
 /**
@@ -66,8 +67,7 @@ const benchmarkFramePerformance = (): Promise<boolean> => {
 /**
  * Classify device tier according to CPU, RAM, network, battery, and frame metrics
  */
-export const detectDeviceProfile = async (): Promise<DeviceProfile> => {
-  if (cachedProfile) return cachedProfile;
+const createDeviceProfile = async (): Promise<DeviceProfile> => {
 
   const nav = (typeof navigator !== "undefined" ? navigator : {}) as unknown as NavigatorWithCapabilities;
   const cores = nav.hardwareConcurrency || 4;
@@ -130,7 +130,14 @@ export const detectDeviceProfile = async (): Promise<DeviceProfile> => {
     document.documentElement.classList.add(`tier-${tier.toLowerCase()}`);
   }
 
+  listeners.forEach(listener => listener(cachedProfile as DeviceProfile));
   return cachedProfile;
+};
+
+export const detectDeviceProfile = (): Promise<DeviceProfile> => {
+  if (cachedProfile) return Promise.resolve(cachedProfile);
+  pendingProfile ??= createDeviceProfile();
+  return pendingProfile;
 };
 
 // Immediate synchronous bootstrap estimation
@@ -150,9 +157,7 @@ if (typeof document !== "undefined") {
   document.documentElement.classList.add(`tier-${initialTier.toLowerCase()}`);
 
   // Refine asynchronously
-  detectDeviceProfile().then((prof) => {
-    listeners.forEach((l) => l(prof));
-  });
+  void detectDeviceProfile();
 }
 
 export const getDeviceTier = (): DeviceTier => {

@@ -17,6 +17,7 @@ interface TestTimerProps {
 export const TestTimer = ({ durationMinutes, onTimeUp, startTime }: TestTimerProps) => {
   const initialStartTimeRef = useRef<number>(startTime || Date.now());
   const onTimeUpRef = useRef(onTimeUp);
+  const expiredRef = useRef(false);
   onTimeUpRef.current = onTimeUp;
 
   const totalAllowedSeconds = durationMinutes * 60;
@@ -39,13 +40,6 @@ export const TestTimer = ({ durationMinutes, onTimeUp, startTime }: TestTimerPro
   }, [startTime, computeRemaining]);
 
   useEffect(() => {
-    if (timeLeft <= 0 && isActive) {
-      setIsActive(false);
-      onTimeUpRef.current();
-    }
-  }, [timeLeft, isActive]);
-
-  useEffect(() => {
     if (!isActive) return;
 
     const syncTime = () => {
@@ -56,7 +50,8 @@ export const TestTimer = ({ durationMinutes, onTimeUp, startTime }: TestTimerPro
         setShowWarning(true);
       }
 
-      if (remaining <= 0) {
+      if (remaining <= 0 && !expiredRef.current) {
+        expiredRef.current = true;
         setIsActive(false);
         onTimeUpRef.current();
       }

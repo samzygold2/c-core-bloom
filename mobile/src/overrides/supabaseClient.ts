@@ -1,19 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../../src/integrations/supabase/types";
+import { Capacitor } from "@capacitor/core";
+import { Preferences } from "@capacitor/preferences";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "placeholder-anon-key";
-
-interface CapacitorWindow {
-  Capacitor?: {
-    Plugins?: {
-      Preferences?: {
-        get: (opts: { key: string }) => Promise<{ value: string | null }>;
-        set: (opts: { key: string; value: string }) => Promise<void>;
-        remove: (opts: { key: string }) => Promise<void>;
-      };
-    };
-  };
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error("Mobile authentication configuration is missing. Build from the project environment.");
 }
 
 /**
@@ -22,7 +15,7 @@ interface CapacitorWindow {
  * with robust local storage fallbacks so authentication sessions survive app backgrounding,
  * kills, and WebView cache clears.
  */
-class MobileStorageAdapter {
+export class MobileStorageAdapter {
   private memoryCache = new Map<string, string>();
 
   async getItem(key: string): Promise<string | null> {
@@ -32,10 +25,9 @@ class MobileStorageAdapter {
         return this.memoryCache.get(key) || null;
       }
 
-      // Check Capacitor Preferences bridge if available on window
-      const cap = (window as unknown as CapacitorWindow).Capacitor;
-      if (cap?.Plugins?.Preferences?.get) {
-        const { value } = await cap.Plugins.Preferences.get({ key });
+      // Use the registered native plugin before the browser fallback.
+      if (Capacitor.isNativePlatform()) {
+        const { value } = await Preferences.get({ key });
         if (value !== null && value !== undefined) {
           this.memoryCache.set(key, value);
           return value;
@@ -50,38 +42,32 @@ class MobileStorageAdapter {
       return value;
     } catch (err) {
       console.warn("[MobileStorageAdapter] Failed to getItem:", err);
-      return localStorage.getItem(key);
+      try { return localStorage.getItem(key); } catch { return this.memoryCache.get(key) ?? null; }
     }
   }
 
   async setItem(key: string, value: string): Promise<void> {
     try {
       this.memoryCache.set(key, value);
-      localStorage.setItem(key, value);
-
-      const cap = (window as unknown as CapacitorWindow).Capacitor;
-      if (cap?.Plugins?.Preferences?.set) {
-        await cap.Plugins.Preferences.set({ key, value });
+      if (Capacitor.isNativePlatform()) {
+        await Preferences.set({ key, value });
       }
     } catch (err) {
       console.warn("[MobileStorageAdapter] Failed to setItem:", err);
-      localStorage.setItem(key, value);
     }
+    try { localStorage.setItem(key, value); } catch { /* Native storage and memory remain available. */ }
   }
 
   async removeItem(key: string): Promise<void> {
     try {
       this.memoryCache.delete(key);
-      localStorage.removeItem(key);
-
-      const cap = (window as unknown as CapacitorWindow).Capacitor;
-      if (cap?.Plugins?.Preferences?.remove) {
-        await cap.Plugins.Preferences.remove({ key });
+      if (Capacitor.isNativePlatform()) {
+        await Preferences.remove({ key });
       }
     } catch (err) {
       console.warn("[MobileStorageAdapter] Failed to removeItem:", err);
-      localStorage.removeItem(key);
     }
+    try { localStorage.removeItem(key); } catch { /* Storage may be disabled. */ }
   }
 }
 

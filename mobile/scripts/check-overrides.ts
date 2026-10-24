@@ -73,7 +73,7 @@ for (const check of checks) {
 
   for (const exp of check.requiredExports) {
     const isNamed = new RegExp(`export\\s+(const|function|class|let)\\s+${exp}\\b|export\\s*\\{[^}]*\\b${exp}\\b[^}]*\\}`).test(overrideContent);
-    const isDefault = exp === "default" && /export\s+default\b/.test(overrideContent);
+    const isDefault = exp === "default" && (/export\s+default\b/.test(overrideContent) || /export\s*\{[^}]*\bdefault\b[^}]*\}/.test(overrideContent));
 
     if (!isNamed && !isDefault) {
       console.error(`❌ Override ${check.name} missing required export: ${exp}`);
