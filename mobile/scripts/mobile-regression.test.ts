@@ -35,6 +35,10 @@ describe("Mobile exam exit protection", () => {
 });
 
 test("offline answers remain queued without acknowledged persistence", async () => {
+  Object.defineProperty(globalThis, "navigator", { configurable: true, value: { onLine: true } });
+  Object.defineProperty(globalThis, "window", { configurable: true, value: {
+    addEventListener: () => {}, dispatchEvent: () => true,
+  } });
   const data = new Map<string, string>();
   Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
     getItem: (key: string) => data.get(key) ?? null,
@@ -47,4 +51,7 @@ test("offline answers remain queued without acknowledged persistence", async () 
   offlineSync.setSyncHandler(async () => { throw new Error("Rejected"); });
   expect(await offlineSync.flushQueue()).toEqual({ synced: 0, failed: 1 });
   expect(offlineSync.getQueue()[0].selectedOption).toBe("a");
+  offlineSync.setSyncHandler(async () => {});
+  expect(await offlineSync.flushQueue()).toEqual({ synced: 1, failed: 0 });
+  expect(offlineSync.getQueue()).toHaveLength(0);
 });
