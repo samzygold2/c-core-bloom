@@ -88,10 +88,18 @@ When a specific web component or utility requires platform-specific behavior (e.
    Computes remaining exam time using wall-clock `Date.now() - startTime` timestamps on every tick and on app foregrounding, preventing timer drift during backgrounding.
 3. **`@/lib/pdfGenerator` -> `mobile/src/overrides/pdfGenerator.ts`**:
    Replaces desktop `<a download>` with the Web Share API (`navigator.share` with `File` objects) to export result slips and reports directly to the native share sheet.
-4. **`@/components/admin/AnalyticsDashboard` -> `mobile/src/overrides/AnalyticsDashboard.tsx`**:
-   Lightweight responsive dashboard card layout for mobile screens.
-5. **`@/components/admin/DatabaseDashboard` -> `mobile/src/overrides/DatabaseDashboard.tsx`**:
-   Mobile-friendly compact database monitoring panel.
+Analytics and Database Dashboard use the shared implementations directly, including student performance statistics and Backup & Restore. Compatibility re-export files remain in the overrides directory; they do not replace those dashboards.
+
+The mobile build loads the managed environment from the project root. Install mobile dependencies with `npm install --prefix mobile` before building or syncing. Run `bun run --cwd mobile test` for behavior and alias-resolution regressions.
+
+After pulling changes, rebuild and synchronize from the mobile package (not the separate root Capacitor project):
+```bash
+git pull
+npm install --prefix mobile
+npm --prefix mobile run build
+npm --prefix mobile run cap:sync
+npm --prefix mobile run android:run
+```
 
 ---
 

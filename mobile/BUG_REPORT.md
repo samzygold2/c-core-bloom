@@ -1,5 +1,38 @@
 # Mobile App Bug Report & Quality Assurance Matrix
 
+## Current audit — 24 October 2026
+
+The historical PASS matrix below is not current device-test evidence. This audit ran the mobile Vite preview in Chromium at 390 × 844, not an Android emulator or physical phone.
+
+### Confirmed fixes
+- Exact native overrides resolve before the generic source alias; dashboard pages remain shared rather than reverting to placeholders.
+- Mobile authentication uses the root managed environment, registered Preferences plugin, and storage fallbacks that do not throw when browser storage is unavailable.
+- Expired mobile timers invoke the expiry callback once, including StrictMode and repeated focus/visibility events.
+- Test navigation confirms exits from the source exam and retains the exam URL when canceled; normal navigation now updates wake lock state.
+- Capacitor App events are registered for Android back, application state, and incoming URLs. App and Preferences were discovered by the CLI and Android plugin settings regenerated.
+- Offline queue entries are retained without an acknowledged transport or after rejection. This utility is still not integrated with exam submission; no offline submission support is claimed.
+- Real mobile type validation replaces the previous `--noCheck` command. Device profiling is initialized once with a shared pending detection.
+- Super-admin header no longer collapses into a narrow text column; analytics actions wrap; checkbox/radio markers are not stretched to 44px.
+
+### Verification performed
+- Four regression tests passed, covering actual alias resolution, environment path, exam exits, and offline acknowledgment.
+- Override compatibility checks passed.
+- Signed-in admin Stats and super-admin Database/Backup & Restore pages rendered with no runtime errors. The tested account had no completed results, so real-result ranking remains unverified. No accounts, tests, results, or backup data were created or restored.
+- Browser tests confirmed one expiry callback, canceled/confirmed test exits, and storage set/read/remove.
+- Latest harness build signal: build OK. No manual mobile build/typecheck was run.
+
+### Remaining findings / limitations
+- A physical Android/iOS device is still required to verify hardware back, native session survival, screen wake lock, and PDF delivery.
+- Native PDF sharing still falls back to a browser download when Web Share is unsupported; delivery and cancellation notifications need further work.
+- Shared test recovery discards an expired saved attempt, and reopening cached tests offline still requires network checks. These remain unresolved; changing shared exam recovery needs dedicated regression coverage.
+- Active JAMB practice is not covered by the `/test/:id` exit guard.
+- Shared analytics still averages raw scores, misses additional-admin assignments in its profile lookup, and groups same-title papers together. These remain unresolved and need data-backed regression tests.
+- Dependency audit still reports high/critical advisories, including the explicitly pinned jsPDF 4.0.0; no breaking upgrades or changes to that standing pin were made.
+- The supplied mobile CI file is not installed in `.github/workflows/`; automatic mobile CI remains unverified.
+- Native custom/verified URL intent filters are not configured; registering app URL events alone does not enable external deep links.
+
+---
+
 *Generated for Phase 8 Verification (C-Core-Bloom JAMB CBT Mobile Application)*
 
 ---
