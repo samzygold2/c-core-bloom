@@ -2,7 +2,7 @@
 set -e
 
 BASE="${1:-main}"
-if [ ! -d ".git" ]; then
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "Web safety check: non-git environment detected, directory structure validated."
   exit 0
 fi
@@ -13,7 +13,7 @@ else
   CHANGED=$(git diff --name-only HEAD; git ls-files --others --exclude-standard)
 fi
 
-OUTSIDE=$(printf '%s\n' "$CHANGED" | grep -vE '^(mobile/|COPILOT_MOBILE_APP.md)$' | grep -v '^$' || true)
+OUTSIDE=$(printf '%s\n' "$CHANGED" | grep -vE '^(mobile/|COPILOT_MOBILE_APP[.]md$)' | grep -v '^$' || true)
 
 if [ -n "$OUTSIDE" ]; then
   echo "Web safety check failed: changes outside mobile/ detected:" >&2

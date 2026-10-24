@@ -1,7 +1,10 @@
 // ALOC JAMB Past Questions Sync - super admin only
 // Resumable: persists progress in public.jamb_sync_jobs so an interrupted
 // run can be continued from the last (subject, year, page) it processed.
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const SUBJECTS = ['mathematics','english','chemistry','physics','biology','economics','literature-in-english','accounting','government','commerce','geography','crk','irk','civic-education','history'];

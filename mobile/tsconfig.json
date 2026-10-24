@@ -20,8 +20,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["../src/*"],
-      "@/components/admin/AnalyticsDashboard": ["src/overrides/AnalyticsDashboard.tsx"],
-      "@/components/admin/DatabaseDashboard": ["src/overrides/DatabaseDashboard.tsx"],
       "@/components/TestTimer": ["src/overrides/TestTimer.tsx"],
       "@/integrations/supabase/client": ["src/overrides/supabaseClient.ts"],
       "@/lib/pdfGenerator": ["src/overrides/pdfGenerator.ts"]

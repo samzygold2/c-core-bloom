@@ -7,18 +7,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, envDir, "");
 
   return {
-    envDir,
+    envDir: path.resolve(__dirname, ".."),
     plugins: [react()],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "../src"),
-        "@/components/admin/AnalyticsDashboard": path.resolve(__dirname, "src/overrides/AnalyticsDashboard.tsx"),
-        "@/components/admin/DatabaseDashboard": path.resolve(__dirname, "src/overrides/DatabaseDashboard.tsx"),
         "@/components/TestTimer": path.resolve(__dirname, "src/overrides/TestTimer.tsx"),
         "@/integrations/supabase/client": path.resolve(__dirname, "src/overrides/supabaseClient.ts"),
         "@/lib/pdfGenerator": path.resolve(__dirname, "src/overrides/pdfGenerator.ts"),
+        "@": path.resolve(__dirname, "../src"),
       },
-      dedupe: ["react", "react-dom"],
+      dedupe: ["react", "react-dom", "@supabase/supabase-js", "@tanstack/react-query", "react-router-dom"],
     },
     server: {
       host: "0.0.0.0",

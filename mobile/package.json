@@ -10,9 +10,10 @@
     "cap:sync": "npx cap sync",
     "android:run": "npx cap run android",
     "android:release": "npx cap build android",
-    "typecheck": "tsc --noEmit --noCheck",
+    "typecheck": "tsgo --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
-    "check-overrides": "npx tsx scripts/check-overrides.ts",
+    "test": "bun test scripts/*.test.ts",
+    "check-overrides": "bun scripts/check-overrides.ts",
     "web-safety-check": "bash ./scripts/web-safety-check.sh"
   },
   "dependencies": {
