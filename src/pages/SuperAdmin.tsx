@@ -757,17 +757,17 @@ const SuperAdmin = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-white">
       {/* Header */}
       <header className="border-b border-blue-200 bg-white/80 backdrop-blur sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Shield className="h-5 w-5 text-white" />
+        <div className="container mx-auto px-4 py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="w-10 h-10 shrink-0 bg-primary rounded-lg flex items-center justify-center">
+              <Shield className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Super Admin Dashboard</h1>
-              <p className="text-sm text-slate-500">Global System Control & Monitoring</p>
+              <h1 className="text-xl font-bold text-foreground">Super Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Global System Control & Monitoring</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 bg-slate-50 border border-blue-100 px-3 py-1.5 rounded-full shadow-inner text-xs sm:text-sm font-medium text-slate-700 mr-1 sm:mr-2">
               <span className="shrink-0">JAMB Questions:</span>
               {jambStatsLoading ? (
