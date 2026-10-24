@@ -18,6 +18,11 @@ class OfflineSyncManager {
   private isOnlineStatus: boolean = typeof navigator !== "undefined" ? navigator.onLine : true;
   private listeners: Set<(isOnline: boolean) => void> = new Set();
   private isSyncing: boolean = false;
+  private syncAnswer: ((answer: QueuedAnswer) => Promise<void>) | null = null;
+
+  public setSyncHandler(handler: (answer: QueuedAnswer) => Promise<void>): void {
+    this.syncAnswer = handler;
+  }
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -110,18 +115,20 @@ class OfflineSyncManager {
    */
   public async flushQueue(): Promise<{ synced: number; failed: number }> {
     const queue = this.getQueue();
-    if (queue.length === 0 || this.isSyncing || !this.isOnlineStatus) {
+    const syncAnswer = this.syncAnswer;
+    if (queue.length === 0 || this.isSyncing || !this.isOnlineStatus || !syncAnswer) {
       return { synced: 0, failed: 0 };
     }
 
     this.isSyncing = true;
     let synced = 0;
     let failed = 0;
-    const remaining: QueuedAnswer[] = [];
+    const acknowledged = new Map<string, number>();
 
     for (const item of queue) {
       try {
-        // Broadcast custom event so active test session can record synced answer
+        await syncAnswer(item);
+        acknowledged.set(item.id, item.timestamp);
         window.dispatchEvent(
           new CustomEvent("cbt:offline_answer_synced", {
             detail: item,
@@ -131,11 +138,11 @@ class OfflineSyncManager {
       } catch (err) {
         console.warn("[OfflineSync] Failed to sync item:", item, err);
         failed++;
-        remaining.push(item);
       }
     }
 
     try {
+      const remaining = this.getQueue().filter(item => acknowledged.get(item.id) !== item.timestamp);
       localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(remaining));
     } catch {
       // Ignore

@@ -9,18 +9,6 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   throw new Error("Mobile authentication configuration is missing. Build from the project environment.");
 }
 
-interface CapacitorWindow {
-  Capacitor?: {
-    Plugins?: {
-      Preferences?: {
-        get: (opts: { key: string }) => Promise<{ value: string | null }>;
-        set: (opts: { key: string; value: string }) => Promise<void>;
-        remove: (opts: { key: string }) => Promise<void>;
-      };
-    };
-  };
-}
-
 /**
  * Mobile-safe persistent storage adapter for Supabase Auth.
  * Bridges native Capacitor Preferences (SharedPreferences on Android / UserDefaults on iOS)
@@ -37,7 +25,7 @@ export class MobileStorageAdapter {
         return this.memoryCache.get(key) || null;
       }
 
-      // Check Capacitor Preferences bridge if available on window
+      // Use the registered native plugin before the browser fallback.
       if (Capacitor.isNativePlatform()) {
         const { value } = await Preferences.get({ key });
         if (value !== null && value !== undefined) {

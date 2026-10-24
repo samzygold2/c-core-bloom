@@ -1,11 +1,8 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 
-export default defineConfig(({ mode }) => {
-  const envDir = path.resolve(__dirname, ".");
-  const env = loadEnv(mode, envDir, "");
-
+export default defineConfig(() => {
   return {
     envDir: path.resolve(__dirname, ".."),
     plugins: [react()],
@@ -24,9 +21,6 @@ export default defineConfig(({ mode }) => {
       fs: {
         allow: [path.resolve(__dirname, "..")],
       },
-    },
-    define: {
-      __APP_ENV__: JSON.stringify(env),
     },
     build: {
       target: "chrome90",
