@@ -1,6 +1,6 @@
 # Mobile bug check
 
-- [ ] Build and verify an installable Android APK for download.
+- [x] Build an Android testing APK; verify signatures, package metadata, bundled assets, and plugins; save download. Physical-device execution remains unverified.
 
 - [x] Audit mobile overrides, configuration, and phone test behavior.
 - [x] Fix confirmed integration, storage, timer, exit, and layout bugs; add regression checks.
