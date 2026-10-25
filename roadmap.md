@@ -1,5 +1,7 @@
 # Mobile bug check
 
+- [ ] Build and verify an installable Android APK for download.
+
 - [x] Audit mobile overrides, configuration, and phone test behavior.
 - [x] Fix confirmed integration, storage, timer, exit, and layout bugs; add regression checks.
 - [x] Exercise signed-in mobile pages and controls; record remaining findings in the mobile bug report.
