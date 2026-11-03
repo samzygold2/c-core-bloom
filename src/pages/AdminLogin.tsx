@@ -10,6 +10,7 @@ import { ShieldCheck, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { z } from 'zod';
 import { BackButton } from '@/components/BackButton';
+import { notifySuperAdmin } from '@/lib/notifySuperAdmin';
 
 const signupSchema = z.object({
   firstname: z.string().trim().min(2, 'First name must be at least 2 characters').max(50, 'First name must be less than 50 characters'),
@@ -113,6 +114,7 @@ const AdminLogin = () => {
       return;
     }
 
+    notifySuperAdmin('admin_signup', `${signupFirstname} ${signupLastname} registered as an admin and is waiting for approval.`, { Email: signupEmail });
     setSuccessMessage('Account created! An existing admin must assign you the admin role before you can access the admin panel.');
     setSignupFirstname('');
     setSignupLastname('');

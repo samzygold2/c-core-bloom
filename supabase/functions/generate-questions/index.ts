@@ -1,4 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { sendSuperAdminAlert } from '../_shared/notify.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.80.0';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
@@ -175,6 +176,12 @@ Where correct_answer is the index (0-3) of the correct option.`;
     }
 
     console.log(`Generated ${generatedQuestions.questions?.length || 0} questions for admin ${user.id}`);
+    try {
+      await sendSuperAdminAlert('Admin used the AI test generator', {
+        Admin: user.email, Questions: generatedQuestions.questions?.length || 0,
+        Topic: (input as any).topic ?? (input as any).subject ?? '', Difficulty: (input as any).difficulty ?? '',
+      });
+    } catch (e) { console.error('Alert failed', e); }
 
     return new Response(
       JSON.stringify({ questions: generatedQuestions.questions }),
@@ -183,6 +190,7 @@ Where correct_answer is the index (0-3) of the correct option.`;
 
   } catch (error) {
     console.error('Error in generate-questions function:', error);
+    try { await sendSuperAdminAlert('AI test generator failed', { Error: error instanceof Error ? error.message : String(error) }); } catch (_) { /* ignore */ }
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
