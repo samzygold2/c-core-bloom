@@ -721,6 +721,7 @@ export type Database = {
       audit_jamb_integrity: { Args: never; Returns: Json }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       get_database_storage_stats: { Args: never; Returns: Json }
+      get_site_access: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
