@@ -1,3 +1,4 @@
+import { SiteAccessControl } from '@/components/admin/SiteAccessControl';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1254,6 +1255,7 @@ const SuperAdmin = () => {
           <TabsContent value="config">
             <Card className="bg-white border-blue-100 shadow-sm">
               <CardContent className="p-6">
+                <SiteAccessControl />
                 <SystemConfigPanel />
               </CardContent>
             </Card>
