@@ -18,6 +18,7 @@ import SuperAdminLogin from "./pages/SuperAdminLogin";
 import JambPractice from "./pages/JambPractice";
 import SuperAdmin from "./pages/SuperAdmin";
 import GoogleDrive from "./pages/GoogleDrive";
+import { SiteAccessGate } from "./components/SiteAccessGate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,17 +32,17 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/auth" element={<SiteAccessGate area="user"><Auth /></SiteAccessGate>} />
+            <Route path="/admin-login" element={<SiteAccessGate area="admin"><AdminLogin /></SiteAccessGate>} />
             <Route path="/super-admin-login" element={<SuperAdminLogin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/test/:testId" element={<TestTaking />} />
-            <Route path="/results" element={<Results />} />
-            <Route path="/results/:resultId" element={<ResultDetail />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/jamb" element={<JambPractice />} />
+            <Route path="/dashboard" element={<SiteAccessGate area="user"><Dashboard /></SiteAccessGate>} />
+            <Route path="/test/:testId" element={<SiteAccessGate area="user"><TestTaking /></SiteAccessGate>} />
+            <Route path="/results" element={<SiteAccessGate area="user"><Results /></SiteAccessGate>} />
+            <Route path="/results/:resultId" element={<SiteAccessGate area="user"><ResultDetail /></SiteAccessGate>} />
+            <Route path="/admin" element={<SiteAccessGate area="admin"><Admin /></SiteAccessGate>} />
+            <Route path="/jamb" element={<SiteAccessGate area="user"><JambPractice /></SiteAccessGate>} />
             <Route path="/super-admin" element={<SuperAdmin />} />
             <Route path="/drive" element={<GoogleDrive />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
