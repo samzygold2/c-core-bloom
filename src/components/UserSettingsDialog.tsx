@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { GoogleDriveSettings } from '@/components/GoogleDriveSettings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -333,6 +334,8 @@ export const UserSettingsDialog = ({ triggerVariant = 'default' }: { triggerVari
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-5 pt-2">
+          <GoogleDriveSettings />
+          <Separator />
           {/* Profile Picture */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold">Profile Picture</h3>
