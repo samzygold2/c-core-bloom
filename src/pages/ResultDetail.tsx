@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Award, Target, FileDown, HardDriveUpload, Loader2, SearchX } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { downloadTestResultPDF, getPDFBlob } from '@/lib/pdfGenerator';
-import { getAccessToken, googleSignIn } from '@/lib/googleAuth';
+import { getAccessToken } from '@/lib/googleAuth';
+import { useGoogleDriveConnection } from '@/hooks/use-google-drive-connection';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserTest {
@@ -27,6 +28,7 @@ interface UserTest {
 const ResultDetail = () => {
   const { resultId } = useParams();
   const { user, loading: authLoading } = useAuth();
+  const { connected: driveConnected } = useGoogleDriveConnection();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -133,15 +135,8 @@ const ResultDetail = () => {
   const handleSaveToDrive = async () => {
     setSavingToDrive(true);
     try {
-      let token = await getAccessToken();
-      if (!token) {
-        const authResult = await googleSignIn();
-        if (authResult) {
-          token = authResult.accessToken;
-        } else {
-          throw new Error('Google connection is required to export to Google Drive.');
-        }
-      }
+      const token = await getAccessToken();
+      if (!token) throw new Error('Reconnect your Google account in Settings.');
 
       const pdfBlob = getPDFBlob({
         studentName: getStudentName(),
@@ -239,7 +234,7 @@ const ResultDetail = () => {
                 <FileDown className="h-4 w-4" />
                 Download result PDF
               </Button>
-              <Button
+              {driveConnected && <Button
                 onClick={handleSaveToDrive}
                 variant="outline"
                 className="w-full gap-2 h-11 sm:h-10 border-primary/25 hover:bg-primary/5 hover:text-primary"
@@ -251,7 +246,7 @@ const ResultDetail = () => {
                   <HardDriveUpload className="h-4 w-4 text-primary" />
                 )}
                 {savingToDrive ? 'Saving…' : 'Save PDF to Google Drive'}
-              </Button>
+              </Button>}
             </div>
 
             <div className="pt-3 sm:pt-4 space-y-2 border-t border-border">

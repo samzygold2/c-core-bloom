@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { User as FirebaseUser } from 'firebase/auth';
+import { Navigate } from 'react-router-dom';
+import { useGoogleDriveConnection } from '@/hooks/use-google-drive-connection';
 
 interface DriveFile {
   id: string;
@@ -35,6 +37,15 @@ interface DriveFile {
 }
 
 export default function GoogleDrivePage() {
+  const { user } = useAuth();
+  const { connected, loading } = useGoogleDriveConnection();
+  if (loading) return <div className="flex min-h-screen items-center justify-center"><RefreshCw className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!connected) return <Navigate to="/dashboard" replace />;
+  return <ConnectedGoogleDrivePage key={user.id} />;
+}
+
+function ConnectedGoogleDrivePage() {
   const { user: supabaseUser } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
