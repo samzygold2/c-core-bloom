@@ -1,8 +1,8 @@
 # Mobile bug check
 
 ## Private Google Drive
-- [x] Restrict existing Google Drive visibility to the connected account; add Settings registration and reject unowned/expired sessions without replacing sign-in.
-- [x] Verify visibility/account-switch rules with regression tests and signed-in navigation in the browser. Google consent remains unverified; connector setup was declined and existing Firebase sign-in is unchanged.
+- [ ] Fix personal Google connection, account isolation, and connected-only navigation.
+- [ ] Verify access rules and account switching; identify any Google setup blocker.
 
 - [x] Build an Android testing APK; verify signatures, package metadata, bundled assets, and plugins; save download. Physical-device execution remains unverified.
 

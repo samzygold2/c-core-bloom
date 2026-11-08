@@ -20,11 +20,9 @@ import { ClipboardList, LibraryBig, ChartColumn, HardDrive, ShieldCheck, LogOut,
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { UserSettingsDialog } from '@/components/UserSettingsDialog';
-import { useGoogleDriveConnection } from '@/hooks/use-google-drive-connection';
 
 export function AppSidebar() {
   const { user, isAdmin, signOut } = useAuth();
-  const { connected: driveConnected } = useGoogleDriveConnection();
   const location = useLocation();
   const navigate = useNavigate();
   const { state, toggleSidebar, isMobile, setOpenMobile } = useSidebar();
@@ -70,7 +68,7 @@ export function AppSidebar() {
     { title: 'My tests', url: '/dashboard', icon: ClipboardList },
     { title: 'JAMB past questions', url: '/jamb', icon: LibraryBig },
     { title: 'My results', url: '/results', icon: ChartColumn },
-    ...(driveConnected ? [{ title: 'Google Drive', url: '/drive', icon: HardDrive }] : []),
+    { title: 'Google Drive', url: '/drive', icon: HardDrive },
   ];
 
   const adminItems = [
