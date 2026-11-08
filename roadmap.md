@@ -1,5 +1,9 @@
 # Mobile bug check
 
+## Private Google Drive
+- [ ] Fix personal Google connection, account isolation, and connected-only navigation.
+- [ ] Verify access rules and account switching; identify any Google setup blocker.
+
 - [x] Build an Android testing APK; verify signatures, package metadata, bundled assets, and plugins; save download. Physical-device execution remains unverified.
 
 - [x] Audit mobile overrides, configuration, and phone test behavior.
