@@ -8,6 +8,13 @@
       "when": 1793963673048,
       "tag": "0000_admins_delete_own_results",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794595533406,
+      "tag": "0001_tighten_jamb_and_reset_request_rls",
+      "breakpoints": true
     }
   ]
 }
