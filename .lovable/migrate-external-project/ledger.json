@@ -1,0 +1,16 @@
+{
+  "source": "code-archive",
+  "artifact": "CBT_site_2-main.zip",
+  "capabilities": [
+    {"capability":"application code and routes","source":"uploaded CBT_site_2 archive","outcome":"sync compatible source changes into the existing app","status":"migrate","next_action":"compare and merge source files while preserving project-managed configuration"},
+    {"capability":"database schema and access rules","source":"Supabase migration files in archive","outcome":"retain existing Lovable Cloud database; review source migrations before applying any","status":"pending","next_action":"compare migrations with current project and live schema; do not replay historical migrations"},
+    {"capability":"application records","source":"archive contains no record export","outcome":"keep current Cloud records unchanged","status":"pending","next_action":"request filtered table exports only if the user intends to migrate data from a different database"},
+    {"capability":"authentication and user identities","source":"existing Lovable Cloud project","outcome":"preserve current auth accounts and sign-in behavior","status":"preserved","next_action":"verify auth-related code changes without importing credentials or replacing user identities"},
+    {"capability":"authorization and RLS","source":"archive migrations and current app rules","outcome":"preserve existing role boundaries and inspect only migration deltas","status":"pending","next_action":"verify any changed access rules against current Cloud schema before deployment"},
+    {"capability":"uploaded file bytes and storage","source":"existing Cloud storage; no archive data export","outcome":"preserve current stored files and buckets","status":"preserved","next_action":"review changed storage integrations and account isolation"},
+    {"capability":"external providers","source":"Google Drive/Firebase, ALOC, and email integrations referenced in source","outcome":"preserve compatible providers and current secrets","status":"pending","next_action":"review integration code and report any configuration needed for verification"},
+    {"capability":"public endpoints, callbacks, and schedules","source":"archive source and Cloud functions","outcome":"preserve existing endpoints and callers","status":"pending","next_action":"compare function changes; deploy only when safe and compatible"},
+    {"capability":"secrets","source":"existing Lovable Cloud configuration","outcome":"do not copy environment files or request secret values","status":"preserved","next_action":"identify variable names only and note missing values if they block a provider check"},
+    {"capability":"cutover and verification","source":"existing live app and uploaded archive","outcome":"no production cutover requested; verify synced code","status":"pending","next_action":"check build/runtime signals and available public flows after sync"}
+  ]
+}
